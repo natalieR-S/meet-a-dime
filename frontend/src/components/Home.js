@@ -391,7 +391,7 @@ export default function Home() {
       const token = currentUser;
       var config = {
         method: 'post',
-        url: bp.buildPath('api/get'),
+        url: bp.buildPath('api/getmatches'),
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
