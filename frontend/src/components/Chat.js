@@ -4,7 +4,6 @@ import {
   Container,
   Form,
   Modal,
-  Image,
   Button,
   InputGroup,
   Row,
@@ -23,9 +22,10 @@ import firebase from 'firebase/app';
 import 'firebase/auth';
 import 'firebase/firestore';
 import moment from 'moment';
+import Zoom from '@material-ui/core/Zoom';
 import IconButton from '@material-ui/core/IconButton';
 import LinearProgress from '@material-ui/core/LinearProgress';
-
+import imageCompression from 'browser-image-compression';
 import clsx from 'clsx';
 import { makeStyles, useTheme } from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
@@ -34,6 +34,7 @@ import Toolbar from '@material-ui/core/Toolbar';
 import List from '@material-ui/core/List';
 import Typography from '@material-ui/core/Typography';
 import Divider from '@material-ui/core/Divider';
+import Tooltip from '@material-ui/core/Tooltip';
 import MenuIcon from '@material-ui/icons/Menu';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
@@ -44,10 +45,14 @@ import HomeIcon from '@material-ui/icons/Home';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import ReportIcon from '@material-ui/icons/Report';
 import ErrorIcon from '@material-ui/icons/Error';
+import AddPhotoAlternateIcon from '@material-ui/icons/AddPhotoAlternate';
+import SendIcon from '@material-ui/icons/Send';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 var bp = require('../Path.js');
 const firestore = firebase.firestore();
-const EXPIRE_IN_MINUTES = 5; // 10 minutes
+const EXPIRE_IN_MINUTES = 4; // 10 minutes
+const MESSAGE_IMAGE_WIDTH = 250; // just a const for easy changing.
 const modalExpire = 10000; // 30 seconds in MS
 
 // Drawer
@@ -128,17 +133,20 @@ export default function Chat() {
   const itemsList = [
     {
       text: 'Home',
+      tooltip: 'This will abandon your match!',
       icon: <HomeIcon style={{ color: '#e64398' }} />,
       onClick: redirectToHome,
     },
 
     {
       text: 'Logout',
+      tooltip: 'This will abandon your match!',
       icon: <ExitToAppIcon style={{ color: '#e64398' }} />,
       onClick: handleLogout,
     },
     {
       text: 'Report Chat',
+      tooltip: 'Privately report the other user.',
       icon: <ReportIcon style={{ color: 'white' }} />,
       // onClick: handleReport,
       onClick: () => {
@@ -171,7 +179,11 @@ export default function Chat() {
   const [switching, setSwitching] = useState(false);
 
   const messageRef = useRef();
-
+  const photoButtonRef = useRef();
+  const photoAttachRef = useRef();
+  const [noPhoto, setNoPhoto] = useState(true);
+  const [photoName, setPhotoName] = useState('');
+  const [sendingPhoto, setSendingPhoto] = useState(false);
   const timeoutRef1 = useRef();
   const timeoutRef2 = useRef();
   const extendedTimeoutRef = useRef();
@@ -626,21 +638,21 @@ export default function Chat() {
           </h5>
         </Modal.Body>
         <Modal.Footer className="mx-auto">
-          <Image
+          <img
             style={{ height: '200px', width: '200px', cursor: 'pointer' }}
             src="DimeAssets/hearteyes.png"
             id="heartEyesImage"
             onClick={pendingMatch}
             alt="Tails"
           />
-          <Image
+          <img
             style={{ height: '200px', width: '200px', cursor: 'pointer' }}
             src="DimeAssets/sleepycoin.png"
             id="sleepyImage"
             onClick={noMatch}
             alt="Heads"
           />
-          <Image
+          <img
             style={{
               height: '200px',
               width: '200px',
@@ -696,6 +708,12 @@ export default function Chat() {
         `Email: "${currentUser.email}" \n With User ID: "${currentUser.uid}" connected with socket id: "${sock.id}"`
       );
     });
+    sock.on('error', () => {
+      console.log('ERROR..');
+    });
+    sock.on('disconnect', () => {
+      console.log('DISCONNECT..');
+    });
 
     if (localStorage.getItem('chatExpiry') === null) {
       var exp = Date.now() + EXPIRE_IN_MINUTES * 60000;
@@ -723,7 +741,7 @@ export default function Chat() {
           noMatchTimeout();
         }, modalExpire);
       }
-    }, 2000);
+    }, 5000);
 
     var current_time = Date.now();
     checkSearchingDoc(sock);
@@ -763,7 +781,12 @@ export default function Chat() {
           // // localStorage.setItem('activeSocket', JSON.stringify(sock));
           // console.log(sock);
           // console.log(socket);
-          displayMessage('Joined the room! Introduce yourself :)', 'system');
+          const emojis = ['❤️', '🥰', '😇'];
+          var random_emoji = emojis[Math.floor(Math.random() * 3)];
+          displayMessage(
+            'Joined the room. Good luck! ' + random_emoji,
+            'system'
+          );
         }
       }
     );
@@ -787,6 +810,38 @@ export default function Chat() {
             // console.log('I sent to the room that I saw that message.');
           }
         );
+      }
+      // console.log(user);
+    });
+
+    sock.on('image', (message, user, message_ID) => {
+      if (user !== currentUser.uid) {
+        var image = new Image();
+        image.src = message;
+        image.onload = () => {
+          // console.log(image.width);
+          // console.log(image.height);
+          // console.log('Calculated new height.');
+          var image_scale = image.width / MESSAGE_IMAGE_WIDTH;
+          image.width = image.width / image_scale;
+          image.height = image.height / image_scale;
+          // console.log(image.width);
+          // console.log(image.height);
+
+          // Pass the result, the image height as well to get proper sizing.
+          displayImage(message, 'received', image.height);
+
+          sock.emit(
+            'seen-message',
+            currentUser.uid,
+            new_room,
+            message_ID,
+            function () {
+              // console.log('I sent to the room that I saw that message.');
+            }
+          );
+          image.onload = null;
+        };
       }
       // console.log(user);
     });
@@ -878,6 +933,38 @@ export default function Chat() {
                 // console.log('I sent to the room that I saw that message.');
               }
             );
+          }
+          // console.log(user);
+        });
+
+        sock.on('image', (message, user, message_ID) => {
+          if (user !== currentUser.uid) {
+            var image = new Image();
+            image.src = message;
+            image.onload = () => {
+              // console.log(image.width);
+              // console.log(image.height);
+              // console.log('Calculated new height.');
+              var image_scale = image.width / MESSAGE_IMAGE_WIDTH;
+              image.width = image.width / image_scale;
+              image.height = image.height / image_scale;
+              // console.log(image.width);
+              // console.log(image.height);
+
+              // Pass the result, the image height as well to get proper sizing.
+              displayImage(message, 'received', image.height);
+
+              sock.emit(
+                'seen-message',
+                currentUser.uid,
+                new_room,
+                message_ID,
+                function () {
+                  // console.log('I sent to the room that I saw that message.');
+                }
+              );
+              image.onload = null;
+            };
           }
           // console.log(user);
         });
@@ -999,11 +1086,64 @@ export default function Chat() {
     } else return false;
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    const message = messageRef.current.value;
-    // const room_ = room;
 
+    const message = messageRef.current.value;
+
+    if (photoAttachRef.current.files.length === 1) {
+      setSendingPhoto(true);
+      const reader = new FileReader();
+      console.log('new reader');
+      var the_image = photoAttachRef.current.files[0];
+      var compressed = the_image;
+      if (the_image.type === 'image/gif' && the_image.size < 500000) {
+      } else {
+        compressed = await imageCompression(the_image, {
+          maxSizeMB: 0.5,
+          maxIteration: 10,
+        });
+      }
+
+      reader.readAsDataURL(compressed);
+
+      reader.onloadend = function () {
+        console.log('finished reading.');
+
+        var image = new Image();
+        image.src = reader.result;
+
+        image.onload = () => {
+          var image_scale = image.width / MESSAGE_IMAGE_WIDTH;
+          image.width = image.width / image_scale;
+          image.height = image.height / image_scale;
+
+          var image_id = Date().toString() + image.height.toString();
+          // Pass the result, the image height as well to get proper sizing.
+          displayImage(reader.result, 'sent', image.height, image_id);
+          // scrollReference;
+          console.log(reader.result.length);
+          socket.emit(
+            'send-image-to-room',
+            currentUser.uid,
+            room,
+            reader.result,
+            image_id
+            // function () {
+            //   console.log('recieved on server side.');
+            // }
+          );
+          photoAttachRef.current.value = null;
+          photoButtonRef.current = 'Photo';
+          image.onload = null;
+          setPhotoName('');
+          setSendingPhoto(false);
+          setNoPhoto(true);
+        };
+
+        reader.onloadend = null;
+      };
+    }
     if (message === '') return;
 
     var messageID = '';
@@ -1018,7 +1158,7 @@ export default function Chat() {
         hash = (hash << 5) - hash + chr;
         hash |= 0; // Convert to 32bit integer
       }
-      return hash + Date().toString();
+      return hash + Date().toString() + Math.random(100).toString();
     }
     messageID = hash_str(message).toString();
 
@@ -1066,6 +1206,59 @@ export default function Chat() {
       }
     );
     messageRef.current.value = '';
+  }
+
+  function displayImage(message, mode, height, messageID) {
+    if (window.location.pathname === '/chat') {
+      var suffix = '';
+      if (mode === 'received') {
+        suffix = ' (them)';
+      } else if (mode === 'sent') {
+        suffix = ' (you)';
+      } else if (mode === 'system') {
+        suffix = ' [[sys msg, remove suffix later]]';
+      }
+      const div = document.createElement('div');
+      const image_container = document.createElement('div');
+      image_container.classList.add('image-container');
+      const img_message = document.createElement('img');
+
+      const subtext = document.createElement('code');
+      subtext.innerHTML =
+        ' <i class="fas fa-exclamation-triangle"></i> ' + 'undelivered&nbsp;';
+
+      subtext.setAttribute('id', messageID);
+      subtext.setAttribute('class', 'subtext-' + mode);
+
+      const image = document.createElement('img');
+      img_message.width = `${MESSAGE_IMAGE_WIDTH}`;
+      // img_message.height = '200';
+      if (mode === 'received') {
+        image.src = matchPhotoRef.current;
+      } else {
+        image.src = myPhotoRef.current;
+      }
+      image.classList.add('chat-image');
+      img_message.classList.add('chat-message-image');
+      div.classList.add('message');
+      div.classList.add(mode);
+
+      // p.textContent = message;
+      img_message.src = message;
+      if (mode !== 'system') div.appendChild(image);
+
+      image_container.appendChild(img_message);
+
+      div.appendChild(image_container);
+
+      document.getElementById('message-container').append(div);
+      if (mode === 'sent' && messageID !== '')
+        document.getElementById('message-container').append(subtext);
+      document.getElementById('scrollReference').style.height = height / 2 + 50;
+      document
+        .getElementById('scrollReference')
+        .scrollIntoView({ behavior: 'smooth' });
+    }
   }
 
   // Two modes added for some extra processing (like maybe classes or etc)
@@ -1297,19 +1490,26 @@ export default function Chat() {
             <Navbar bg="transparent">
               <Navbar.Brand>
                 <img
-                  style={{ cursor: 'pointer' }}
+                  // style={{ cursor: 'pointer' }}
                   src="/DimeAssets/headerlogo.png"
                   className="d-inline-block align-top header-logo"
                   alt="logo"
                   href="home"
-                  onClick={redirectToHome}
+                  onClick={() => {}}
                 />
               </Navbar.Brand>
             </Navbar>
           </Typography>
-          <Button className="btn-chat abandon mx-3" onClick={redirectToAfter}>
-            Abandon Chat
-          </Button>
+          <Tooltip
+            TransitionComponent={Zoom}
+            title={'You will not be rematched!'}>
+            <Button
+              hidden={open}
+              className="btn-chat abandon mx-3"
+              onClick={redirectToAfter}>
+              Abandon Chat
+            </Button>
+          </Tooltip>
           <IconButton
             color="default"
             aria-label="open drawer"
@@ -1334,7 +1534,7 @@ export default function Chat() {
         justifyContent="flex-end"
         alignItems="center"
         style={{
-          marginTop: '18%',
+          marginTop: '100px',
         }}>
         {match_photo !== '' ? (
           <ReactRoundedImage
@@ -1399,15 +1599,55 @@ export default function Chat() {
       <React.Fragment>
         <Container>
           <div id="message-container" className=""></div>
-          <div style={{ height: '50px' }} id="scrollReference"></div>
+          <div style={{ height: '60px' }} id="scrollReference"></div>
 
           <div className="footer">
             {!afterChat && (
               <Container>
                 <Form onSubmit={handleSubmit}>
+                  <input
+                    onChange={(e) => {
+                      console.log(photoAttachRef.current.files);
+                      if (photoAttachRef.current.files.length === 1) {
+                        console.log('set no photo to false');
+                        setNoPhoto(false);
+                        setPhotoName(
+                          photoAttachRef.current.files[0].name.substring(0, 6) +
+                            '..'
+                        );
+                        // photoButtonRef.current.textContent =
+                        //   photoAttachRef.current.files[0].name.substring(0, 5) +
+                        //   '..';
+                      }
+                    }}
+                    ref={photoAttachRef}
+                    accept="image/*"
+                    id="photoAttach"
+                    hidden
+                    type="file"
+                  />
+
                   <InputGroup>
+                    <Tooltip
+                      TransitionComponent={Zoom}
+                      title={'Send an image!'}>
+                      <Button
+                        ref={photoButtonRef}
+                        onClick={() => {
+                          document.getElementById('photoAttach').click();
+                        }}>
+                        <AddPhotoAlternateIcon
+                          hidden={!noPhoto}
+                          style={{
+                            marginBottom: '5px',
+                          }}></AddPhotoAlternateIcon>
+                        <div style={{ fontSize: '16px' }} hidden={noPhoto}>
+                          {photoName}
+                        </div>
+                      </Button>
+                    </Tooltip>
                     <FormControl
-                      placeholder="Say something nice..."
+                      placeholder="Say hi! 👋"
                       aria-label="Message"
                       type="text"
                       id="message_input"
@@ -1418,7 +1658,23 @@ export default function Chat() {
                       disabled={room === '' || afterChat ? true : false}
                       type="submit"
                       id="send-button">
-                      Send
+                      <div>
+                        Send{' '}
+                        <SendIcon
+                          hidden={sendingPhoto}
+                          style={{
+                            marginBottom: '5px',
+                          }}></SendIcon>
+                        <CircularProgress
+                          size="25px"
+                          style={{
+                            color: 'white',
+                            position: 'relative',
+                            bottom: '-3px',
+                          }}
+                          hidden={!sendingPhoto}
+                        />
+                      </div>
                     </Button>
                   </InputGroup>
                 </Form>
@@ -1464,7 +1720,7 @@ export default function Chat() {
         <Divider style={{ background: '#e64398' }} />
         <List>
           {itemsList.map((item, index) => {
-            const { text, icon, onClick } = item;
+            const { text, icon, tooltip, onClick } = item;
             const redBGifReport =
               text === 'Report Chat' ? { backgroundColor: '#da3636' } : null;
             const classToUse =
@@ -1479,10 +1735,15 @@ export default function Chat() {
                 onClick={onClick}
                 style={redBGifReport}>
                 {icon && <ListItemIcon>{icon}</ListItemIcon>}
-                <ListItemText
-                  classes={{ primary: classToUse }}
-                  primary={text}
-                />
+                <Tooltip
+                  placement="left"
+                  TransitionComponent={Zoom}
+                  title={tooltip}>
+                  <ListItemText
+                    classes={{ primary: classToUse }}
+                    primary={text}
+                  />
+                </Tooltip>
               </ListItem>
             );
           })}

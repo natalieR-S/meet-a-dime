@@ -96,6 +96,7 @@ exports.setApp = function (app, admin) {
           photo: data.photo,
           ageRangeMin: data.ageRangeMin,
           ageRangeMax: data.ageRangeMax,
+          uid: obj.uid,
         };
       }
     } catch (error) {
@@ -232,7 +233,7 @@ exports.setApp = function (app, admin) {
   // This retrieves the messages when users heart eachother.
   app.post("/api/getmatches", async (req, res) => {
     const user = req["currentUser"];
-    var obj = ({ uid: uid } = req.body);
+    var obj = ({ uid: uid, query: query } = req.body);
 
     if (!user) {
       responseObj = { error: "You must be logged in." };
@@ -250,10 +251,11 @@ exports.setApp = function (app, admin) {
       return;
     }
 
-    async function getMatchesData(matches_array) {
+    async function getMatchesData(matches_array, query = "") {
       var jsonReturn = [];
       for (let index = 0; index < matches_array.length; index++) {
         // console.log("ran once");
+        if (index === 9) break;
         var match_data = await admin
           .firestore()
           .collection("users")
@@ -270,7 +272,17 @@ exports.setApp = function (app, admin) {
           exitMessage: match_data.data().exitMessage,
           birth: match_data.data().birth,
         };
-        jsonReturn.push(obj);
+        var fname = obj.firstName.toLowerCase();
+        var lname = obj.lastName.toLowerCase();
+        var flname = fname + " " + lname;
+        if (
+          query === "" ||
+          fname.indexOf(query.toLowerCase()) >= 0 ||
+          lname.indexOf(query.toLowerCase()) >= 0 ||
+          flname.indexOf(query.toLowerCase()) >= 0
+        ) {
+          jsonReturn.push(obj);
+        }
       }
       return jsonReturn;
     }
@@ -286,7 +298,7 @@ exports.setApp = function (app, admin) {
         .get();
 
       var matches_array = user_doc.data().SuccessMatch;
-      var result = await getMatchesData(matches_array);
+      var result = await getMatchesData(matches_array, query);
       var ret = result;
       res.status(200).json(ret);
       return;

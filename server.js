@@ -108,10 +108,16 @@ io.on("connection", (socket) => {
   );
 
   socket.on("seen-message", (user, room, messageID, callback) => {
-    console.log("seen event recieved");
-    console.log(room);
+    // console.log("seen event recieved");
+    // console.log(room);
     io.in(room).emit("seen", messageID);
     callback();
+  });
+
+  // Images!
+  socket.on("send-image-to-room", (user, room, message, messageID) => {
+    console.log("recieved an image");
+    socket.to(room).emit("image", message, user, messageID);
   });
 });
 

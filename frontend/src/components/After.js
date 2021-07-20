@@ -26,12 +26,17 @@ import List from '@material-ui/core/List';
 import Typography from '@material-ui/core/Typography';
 import Divider from '@material-ui/core/Divider';
 import MenuIcon from '@material-ui/icons/Menu';
+import PhoneIphoneIcon from '@material-ui/icons/PhoneIphone';
+import ChatBubbleOutlineIcon from '@material-ui/icons/ChatBubbleOutline';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import HomeIcon from '@material-ui/icons/Home';
+import Collapse from '@material-ui/core/Collapse';
+
+import CloseIcon from '@material-ui/icons/Close';
 // import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 
 var bp = require('../Path.js');
@@ -141,6 +146,7 @@ export default function After() {
   const [match_exitMessage, setExitMessage] = useState('');
   const [match_phoneNumber, setPhoneNumber] = useState('');
   const firestore = firebase.firestore();
+  const [alertOpen, setAlertOpen] = useState(true);
 
   useLocation();
   // Gets the passed in match id from the link in the home page
@@ -339,96 +345,263 @@ export default function After() {
         </Toolbar>
       </AppBar>
       <Grid
-          container
-          direction="column"
-          justifyContent="flex-end"
-          alignItems="center"
-          style={{
-              marginTop: '18%'
-          }}>
-      {/* {error && <Alert severity="error">{error}</Alert>} */}
-      {pageType && pageType === 'match_abandoned' && (
-        <Alert severity="info">{'Your match left.'}</Alert>
-      )}
-      {pageType && pageType === 'user_abandoned' && (
-        <Alert severity="info">
-          {"Sorry it didn't go well. Keep flipping the coin!"}
-        </Alert>
-      )}
-      {pageType && pageType === 'match_didnt_go_well' && (
-        <Alert severity="info">
-          {
-            'The other user said it didnt go well (I AM PLACEHOLDER TEXT CHANGE ME LATER)'
-          }
-        </Alert>
-      )}
-      {pageType && pageType === 'user_didnt_go_well' && (
-        <Alert severity="info">
-          {
-            "Sorry it didn't go well :( Keep looking! (I AM PLACEHOLDER TEXT CHANGE ME LATER)"
-          }
-        </Alert>
-      )}
-      {pageType && pageType === 'match_timedout' && (
-        <Alert severity="info">{'Match timed out.'}</Alert>
-      )}
-      {pageType && pageType === 'match_made' && (
-        <Alert severity="info">{"You've matched with a Dime!"}</Alert>
-      )}
-      {pageType && pageType === 'timeout' && (
-        <Alert severity="info">{'Timeout'}</Alert>
-      )}
-      {pageType && pageType === 'error' && (
-        <Alert severity="error">{'Something went wrong.'}</Alert>
-      )}
-      {pageType && pageType === 'extended_timeout' && (
-        <Alert severity="info">
-          {'Timeout extended (i said yes, they did not)'}
-        </Alert>
-      )}
-      {pageType && pageType === 'user_reported' && (
-        <Alert severity="success">
-          {
-            'Other user was reported. This report is secret: the other user was not alerted.'
-          }
-        </Alert>
-      )}
-     
+        container
+        direction="column"
+        justifyContent="flex-end"
+        alignItems="center"
+        style={{
+          marginTop: '100px',
+        }}>
+        {/* {error && <Alert action={
+            <IconButton
+              aria-label="close"
+              color="inherit"
+              size="small"
+              onClick={() => {
+                setAlertOpen(false);
+              }}
+            >
+              <CloseIcon fontSize="inherit" />
+            </IconButton>
+          } variant="filled" severity="error">{error}</Alert>} */}
+        <Collapse in={alertOpen} style={{ marginBottom: '10px' }}>
+          {pageType && pageType === 'match_abandoned' && (
+            <Alert
+              action={
+                <IconButton
+                  aria-label="close"
+                  color="inherit"
+                  size="small"
+                  onClick={() => {
+                    setAlertOpen(false);
+                  }}>
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+              variant="filled"
+              severity="info">
+              {'Your match left 😥'}
+            </Alert>
+          )}
+          {pageType && pageType === 'user_abandoned' && (
+            <Alert
+              action={
+                <IconButton
+                  aria-label="close"
+                  color="inherit"
+                  size="small"
+                  onClick={() => {
+                    setAlertOpen(false);
+                  }}>
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+              variant="filled"
+              severity="info">
+              {"Sorry it didn't go well.. Keep flipping the coin 😊"}
+            </Alert>
+          )}
+          {pageType && pageType === 'match_didnt_go_well' && (
+            <Alert
+              action={
+                <IconButton
+                  aria-label="close"
+                  color="inherit"
+                  size="small"
+                  onClick={() => {
+                    setAlertOpen(false);
+                  }}>
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+              variant="filled"
+              severity="info">
+              {'Awkward, the other user said no. Keep looking 😌'}
+            </Alert>
+          )}
+          {pageType && pageType === 'user_didnt_go_well' && (
+            <Alert
+              action={
+                <IconButton
+                  aria-label="close"
+                  color="inherit"
+                  size="small"
+                  onClick={() => {
+                    setAlertOpen(false);
+                  }}>
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+              variant="filled"
+              severity="info">
+              {"Sorry it didn't go well.. Keep looking 😊"}
+            </Alert>
+          )}
+          {pageType && pageType === 'match_timedout' && (
+            <Alert
+              action={
+                <IconButton
+                  aria-label="close"
+                  color="inherit"
+                  size="small"
+                  onClick={() => {
+                    setAlertOpen(false);
+                  }}>
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+              variant="filled"
+              severity="info">
+              {'Your match timed out. You can match again in the future ⌛'}
+            </Alert>
+          )}
+          {pageType && pageType === 'match_made' && (
+            <Alert
+              action={
+                <IconButton
+                  aria-label="close"
+                  color="inherit"
+                  size="small"
+                  onClick={() => {
+                    setAlertOpen(false);
+                  }}>
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+              variant="filled"
+              severity="info">
+              {"You've matched with a Dime 🥰"}
+            </Alert>
+          )}
+          {pageType && pageType === 'timeout' && (
+            <Alert
+              action={
+                <IconButton
+                  aria-label="close"
+                  color="inherit"
+                  size="small"
+                  onClick={() => {
+                    setAlertOpen(false);
+                  }}>
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+              variant="filled"
+              severity="info">
+              {'You timed out. You can match again in the future ⌛'}
+            </Alert>
+          )}
+          {pageType && pageType === 'error' && (
+            <Alert
+              action={
+                <IconButton
+                  aria-label="close"
+                  color="inherit"
+                  size="small"
+                  onClick={() => {
+                    setAlertOpen(false);
+                  }}>
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+              variant="filled"
+              severity="error">
+              {'Something went wrong ⚠️'}
+            </Alert>
+          )}
+          {pageType && pageType === 'extended_timeout' && (
+            <Alert
+              action={
+                <IconButton
+                  aria-label="close"
+                  color="inherit"
+                  size="small"
+                  onClick={() => {
+                    setAlertOpen(false);
+                  }}>
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+              variant="filled"
+              severity="info">
+              {
+                'Timed out. You said yes, so you can match again in the future 🕓'
+              }
+            </Alert>
+          )}
+          {pageType && pageType === 'user_reported' && (
+            <Alert
+              action={
+                <IconButton
+                  aria-label="close"
+                  color="inherit"
+                  size="small"
+                  onClick={() => {
+                    setAlertOpen(false);
+                  }}>
+                  <CloseIcon fontSize="inherit" />
+                </IconButton>
+              }
+              variant="filled"
+              severity="success">
+              {
+                'Other user was reported. This report is secret and they were not alerted 🚫'
+              }
+            </Alert>
+          )}
+        </Collapse>
 
-          {match_photo !== '' ? (
-              <ReactRoundedImage
-                  imageHeight="150"
-                  imageWidth="150"
-                  image={match_photo}
-                  id="photo"
-                  roundedSize="13"
-                  borderRadius="150"
-                  alt="My Profile Pic"
-                  hoverColor="pink"
-                  style={{
-                          marginTop: '25px'
-                      }}
-              />
-          ) : (
-                  <ReactRoundedImage
-                      className="img-fluid"
-                      image="DimeAssets/coinsignup.png"
-                      height="300px"
-                      width="300px"
-                      roundedSize="13"
-                      borderRadius="150"
-                      alt="Default Pic"
-                      hoverColor="pink"
-                      style={{
-                          marginTop: '25px'
-                      }}
-                  />)}
-          <h2 className="text-center mb-3" style={{ color: '#E64398' }}>
-              {match_name}
-          </h2>
-          {pageType === 'match_made' && <h3 style={{ color: '#E64398'}}>Congratulations!</h3>}
-          {pageType === 'match_made' && <h3 style={{ color: '#E64398' }}>{match_phoneNumber}</h3>}
-          {pageType === 'match_made' && <h3 style={{ color: '#E64398' }}>{match_exitMessage}</h3>}
+        {match_photo !== '' ? (
+          <ReactRoundedImage
+            imageHeight="150"
+            imageWidth="150"
+            image={match_photo}
+            id="photo"
+            roundedSize="13"
+            borderRadius="150"
+            alt="My Profile Pic"
+            hoverColor="pink"
+            style={{
+              marginTop: '25px',
+            }}
+          />
+        ) : (
+          <ReactRoundedImage
+            className="img-fluid"
+            image="DimeAssets/coinsignup.png"
+            height="300px"
+            width="300px"
+            roundedSize="13"
+            borderRadius="150"
+            alt="Default Pic"
+            hoverColor="pink"
+            style={{
+              marginTop: '25px',
+            }}
+          />
+        )}
+        <h2 className="text-center mb-3" style={{ color: '#E64398' }}>
+          {match_name}
+        </h2>
+        <div id="made-match-div">
+          {pageType === 'match_made' && (
+            <h3 style={{ color: '#e4a', fontSize: 'calc(1rem + .6vw)' }}>
+              Congratulations!
+            </h3>
+          )}
+          {pageType === 'match_made' && (
+            <h3 style={{ color: '#e4a' }}>
+              <PhoneIphoneIcon style={{ color: '#e4a' }} />
+              {match_phoneNumber}
+            </h3>
+          )}
+          {pageType === 'match_made' && (
+            <h3 style={{ color: '#e4a' }}>
+              <ChatBubbleOutlineIcon style={{ color: '#e4a' }} />{' '}
+              {match_exitMessage}
+            </h3>
+          )}
+        </div>
       </Grid>
       {/* <Button variant="contained" color="primary" onClick={redirectToHome}>
         Home

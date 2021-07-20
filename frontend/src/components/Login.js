@@ -161,13 +161,19 @@ export default function Login() {
   // Column makes it stack and grow nice and evenly! But it only makes sense on small screens.
   // If it were row the whole time, it would 'slide' over the other component until it
   // didn't fit anymore.
-  var columnIfSmall = size.width <= 600 ? 'column' : 'row';
+  var columnIfSmall = size.width <= 600 ? 'column-reverse' : 'row';
   // Prevent infinite growth when the screen snaps into the sm view
   var clampIfSmall = size.width <= 600 ? '400px' : '1000px';
+  var hideIfSmall = size.width <= 600 ? 'none' : 'inline';
   // There is this weird 'middle ground' between 600 and ~1000 that are perfect for space-evenly,
   // but when larger than that it spreads too far out. 'center' seems to fix this
   var centerIfLarge =
     size.width >= 600 && size.width <= 1000 ? 'space-evenly' : 'center';
+
+  var marginVariable = size.width > 600 ? '20px' : (size.height - 430) / 2;
+  if (isNaN(marginVariable)) {
+    marginVariable = '20px'; // this happens on occasional logouts.
+  }
   return (
     <>
       <Grid
@@ -183,6 +189,7 @@ export default function Login() {
               marginLeft: 'auto',
               maxWidth: clampIfSmall,
               marginRight: 'auto',
+              display: hideIfSmall,
             }}
           />
         </Grid>
@@ -193,7 +200,8 @@ export default function Login() {
               minWidth: '300px',
               maxWidth: '400px',
               marginLeft: 'auto',
-              marginTop: '20px',
+              marginTop: marginVariable,
+              marginBottom: marginVariable,
 
               borderRadius: '30px',
             }}>

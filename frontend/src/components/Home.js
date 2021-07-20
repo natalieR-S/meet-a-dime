@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 // import { Button, Alert, Container } from 'react-bootstrap';
-import { Navbar, Button, Form, Col, Row } from 'react-bootstrap';
+import { Navbar, Button, Form, Col, Row, Card } from 'react-bootstrap';
 import { Alert } from '@material-ui/lab';
 import Snackbar from '@material-ui/core/Snackbar';
 import MuiAlert from '@material-ui/lab/Alert';
+import Backdrop from '@material-ui/core/Backdrop';
 // import AddShoppingCartIcon from '@material-ui/icons/AddShoppingCart';
 // import PhotoCamera from '@material-ui/icons/PhotoCamera';
 // import Container from '@material-ui/core/Container';
@@ -24,10 +25,15 @@ import { makeStyles, useTheme } from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
+import ChatIcon from '@material-ui/icons/Chat';
 import List from '@material-ui/core/List';
 import Typography from '@material-ui/core/Typography';
 import Divider from '@material-ui/core/Divider';
+import Zoom from '@material-ui/core/Zoom';
+import Fade from '@material-ui/core/Fade';
+import Collapse from '@material-ui/core/Collapse';
 import IconButton from '@material-ui/core/IconButton';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import MenuIcon from '@material-ui/icons/Menu';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
@@ -38,6 +44,7 @@ import CreateIcon from '@material-ui/icons/Create';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 // import TextField from '@material-ui/core/TextField';
 import LinearProgress from '@material-ui/core/LinearProgress';
+import Tooltip from '@material-ui/core/Tooltip';
 
 // import Paper from '@material-ui/core/Paper';
 // import Grid from '@material-ui/core/Grid';
@@ -49,6 +56,10 @@ const drawerWidth = 300;
 const useStyles = makeStyles((theme) => ({
   root: {
     display: 'flex',
+  },
+  backdrop: {
+    zIndex: theme.zIndex.drawer + 1,
+    color: '#fff',
   },
   appBar: {
     transition: theme.transitions.create(['margin', 'width'], {
@@ -112,18 +123,6 @@ const useStyles = makeStyles((theme) => ({
 export default function Home() {
   // Drawer
   const classes = useStyles();
-  const itemsList = [
-    {
-      text: 'Edit Profile',
-      icon: <CreateIcon style={{ color: '#e64398' }} />,
-      onClick: redirectToProfile,
-    },
-    {
-      text: 'Logout',
-      icon: <ExitToAppIcon style={{ color: '#e64398' }} />,
-      onClick: handleLogout,
-    },
-  ];
 
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
@@ -140,7 +139,9 @@ export default function Home() {
   const [sopen, setOpenSearch] = React.useState(false);
 
   const handleSearchOpen = () => {
+    setTooltipOpen(false);
     setOpenSearch(true);
+    handleDrawerClose();
     searching();
   };
 
@@ -148,6 +149,30 @@ export default function Home() {
     killSearch();
     setOpenSearch(false);
   };
+
+  const itemsList = [
+    {
+      text: 'New Chat',
+      tooltip: 'Find a Dime!',
+      icon: <ChatIcon style={{ color: '#e64398' }} />,
+      onClick: handleSearchOpen,
+    },
+    {
+      tooltip: 'Change your preferences and upload a photo!',
+      text: 'Edit Profile',
+      icon: <CreateIcon style={{ color: '#e64398' }} />,
+      onClick: redirectToProfile,
+    },
+    {
+      tooltip: 'Ends your session.', // this is a bit of a stretch..
+      text: 'Logout',
+      icon: <ExitToAppIcon style={{ color: '#e64398' }} />,
+      onClick: handleLogout,
+    },
+  ];
+
+  const [matchesArray, setMatchesArray] = useState([]);
+
   const observer = useRef(null);
   const transferTimeoutRef = useRef();
 
@@ -158,11 +183,15 @@ export default function Home() {
   const [lockout, setLockout] = useState(false);
   const [loading, setLoading] = useState(true);
   const [myPhoto, setMyPhoto] = useState('');
-  const [matchPhotos, setMatchPhotos] = useState('');  
+  const [matchPhotos, setMatchPhotos] = useState('');
   const [progress, setProgress] = useState(-1);
   const [inActiveChat, setInActiveChat] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [timeoutSnackbar, setTimeoutSnackbar] = useState(false);
+  const [previousMatchesLoading, setPreviousMatchesLoading] = useState(false);
+  const matchSearchbarRef = useRef('');
+  const [searchMatchesOnce, setSearchMatchesOnce] = useState(false);
+
   const [name, setName] = useState('');
   // the firebase firestore instance, used to query, add, delete, edit from DB.
   const firestore = firebase.firestore();
@@ -225,8 +254,8 @@ export default function Home() {
     phone: '',
     sex: '',
     exitMessage: '',
-  })
-  
+  });
+
   // useEffect occurs only once on page load.
   // This will clear any record of the user in the 'searching' collection
   // so that it not only resets the searching state, but
@@ -243,7 +272,7 @@ export default function Home() {
     async function getIntialUserPhoto() {
       try {
         const token = currentUser && (await currentUser.getIdToken());
-        console.log(token);
+        // console.log(token);
         var config = {
           method: 'post',
           url: bp.buildPath('api/getbasicuser'),
@@ -328,9 +357,12 @@ export default function Home() {
       setLockout(false);
       setLoading(false);
     }
-    // call the function that was just defined here.
+
+    // call the functions that were just defined here.
     purgeOld();
     getIntialUserPhoto();
+    fetchSuccessMatch('', true);
+
     return () => {
       clearTimeout(timeout5.current);
       clearAllTimeouts();
@@ -382,13 +414,16 @@ export default function Home() {
       console.log('issue in fetch data');
     }
   }
-  
 
   // This makes a POST request to the server listening at /api/getmatches
   // It returns the user's Success Match array.
-  async function fetchSuccessMatch() {
+  async function fetchSuccessMatch(query = '', initial = false) {
     try {
-      const token = currentUser;
+      setPreviousMatchesLoading(true);
+      if (!initial) {
+        setSearchMatchesOnce(true);
+      }
+      const token = currentUser && (await currentUser.getIdToken());
       var config = {
         method: 'post',
         url: bp.buildPath('api/getmatches'),
@@ -396,18 +431,18 @@ export default function Home() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        data: { uid: currentUser.uid },
+        data: { uid: currentUser.uid, query: query },
       };
 
       var response = await axios(config);
-      var matchesArray = response.data
-
+      setMatchesArray(response.data);
+      // console.log(response.data);
     } catch (error) {
       console.log(error);
       console.log('issue in fetch data');
     }
+    setPreviousMatchesLoading(false);
   }
-  
 
   // When the user logs out, call the observer to unsubscribe to changes.
   // and logout.
@@ -543,7 +578,20 @@ export default function Home() {
     // Is there user preferences in the local storage?
     // If not, query the API and get the new data.
     if (localStorage.getItem('user_data') === null) {
-      console.log('1');
+      console.log('1: No data set, fetching now.');
+      await fetchData();
+      try {
+      } catch (error) {
+        setLockout(false);
+        console.log(error);
+      }
+    } else if (
+      JSON.parse(localStorage.getItem('user_data')).uid !== currentUser.uid
+    ) {
+      alert(
+        'You are still logged into another user! You may encounter problems.'
+      );
+      console.log('2: Data was leftover from some other user.');
       await fetchData();
       try {
       } catch (error) {
@@ -939,6 +987,8 @@ export default function Home() {
     }
   }
 
+  const [tooltipOpen, setTooltipOpen] = useState(false);
+
   // The actual JSX components. The top is the errors/match states,
   // conditionally rendered.
   return (
@@ -962,13 +1012,26 @@ export default function Home() {
               </Navbar.Brand>
             </Navbar>
           </Typography>
-
-          <Button
-            className="btn-chat mx-3"
-            disabled={lockout}
-            onClick={handleSearchOpen}>
-            New Chat
-          </Button>
+          <Tooltip
+            open={tooltipOpen}
+            onOpen={() => {
+              setTooltipOpen(true);
+            }}
+            onClose={() => {
+              setTooltipOpen(false);
+            }}
+            TransitionComponent={Zoom}
+            title={'Find a Dime!'}>
+            <span>
+              <Button
+                hidden={open}
+                className="btn-chat mx-3"
+                disabled={lockout}
+                onClick={handleSearchOpen}>
+                New Chat
+              </Button>
+            </span>
+          </Tooltip>
           <IconButton
             color="default"
             aria-label="open drawer"
@@ -1000,21 +1063,29 @@ export default function Home() {
         <br></br>
         {/* Fixing search bar */}
         <Row>
-          <Form.Group as={Row} controlId="formPlaintextPassword">
-            <Form.Label className="text-matches" column xs="3">
-              My Matches
-            </Form.Label>
-            <Col className="mx-1">
-              <Form.Control
-                className="text-search mt-2 mb-4"
-                type="search"
-                data-lpignore="true"
-                placeholder="Search for previous matches..."
-              />
-            </Col>
-          </Form.Group>
+          <Form
+            autoComplete="off"
+            onSubmit={(e) => {
+              e.preventDefault();
+              fetchSuccessMatch(matchSearchbarRef.current.value);
+            }}>
+            <Form.Group as={Row} controlId="formPlaintextPassword">
+              <Form.Label className="text-matches" column xs="3">
+                My Matches
+              </Form.Label>
+              <Col className="mx-1">
+                <Form.Control
+                  className="text-search mt-2 mb-4"
+                  autoComplete="off"
+                  type="search"
+                  data-lpignore="true"
+                  placeholder="Search for previous matches..."
+                  ref={matchSearchbarRef}
+                />
+              </Col>
+            </Form.Group>
+          </Form>
         </Row>
-        {error && <Alert severity="error">{error}</Alert>}
         {inActiveChat && (
           <Alert variant="filled" severity="info">
             You are in a chat!{' '}
@@ -1039,6 +1110,55 @@ export default function Home() {
             }
           </Alert>
         )}
+        {matchesArray && matchesArray.length !== 0 && (
+          <div
+            onDrag={(e) => console.log(e.clientX)}
+            onWheel={(e) => {
+              if (e.deltaY > 0) {
+                document
+                  .getElementById('home-scrolling')
+                  .scrollBy(e.deltaY / 3, 0, 'smooth');
+                window.scrollBy(0, e.deltaY, 'smooth');
+              }
+              if (e.deltaY < 0) {
+                document
+                  .getElementById('home-scrolling')
+                  .scrollBy(e.deltaY / 3, 0, 'smooth');
+                window.scrollBy(0, e.deltaY, 'smooth');
+              }
+            }}
+            id="home-scrolling">
+            {matchesArray.map((vals, index) => {
+              // console.log(vals);
+              var age = moment().diff(vals.birth, 'years');
+              return (
+                <Card key={index} className="home-card">
+                  <Card.Img
+                    variant="top"
+                    src={vals.photo}
+                    className="card-image"
+                  />
+                  <Card.Body className="card-body">
+                    <Card.Title>
+                      {vals.firstName + ' ' + vals.lastName}
+                    </Card.Title>
+                    <Card.Title className="card-text">
+                      {age} • {vals.sex[0]}{' '}
+                      <span className="card-text-hidden">• {vals.phone}</span>
+                    </Card.Title>
+                  </Card.Body>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+        {matchesArray && matchesArray.length === 0 && !searchMatchesOnce && (
+          <div id="no-previous-matches">No matches yet.. 😔</div>
+        )}
+        {matchesArray && matchesArray.length === 0 && searchMatchesOnce && (
+          <div id="no-previous-matches">No results.</div>
+        )}
+        {error && <Alert severity="error">{error}</Alert>}
 
         <Modal
           style={{
@@ -1055,60 +1175,44 @@ export default function Home() {
           open={sopen}
           // onClose={handleSearchClose}
         >
-          <div
-            className="text-center p-3"
-            style={{
-              // border: '2px solid grey',
-              borderRadius: '50px',
-              padding: '10px',
-              backgroundColor: 'rgba(0,0,0,0.5)',
-            }}>
-            {/* {!inActiveChat && match && match === 'Not searching.' && (
-              <Alert
-                style={{ width: '80%', maxWidth: '400px', margin: 'auto' }}
-                severity="warning">
-                {match}
-              </Alert>
-            )}
-            {!inActiveChat && match && match === 'Searching.' && (
-              <Alert
-                style={{ width: '80%', maxWidth: '400px', margin: 'auto' }}
-                severity="info">
-                {match}
-              </Alert>
-            )}
-            {!inActiveChat &&
-              match &&
-              match !== 'Not searching.' &&
-              match !== 'Searching.' && (
-                <Alert
-                  style={{ width: '80%', maxWidth: '400px', margin: 'auto' }}
-                  severity="success">
-                  {match}
-                </Alert>
-              )} */}
-            <img
+          <Zoom in={sopen}>
+            <div
+              className="text-center p-3"
               style={{
-                width: 420,
-                height: 'auto',
+                // border: '2px solid grey',
+                borderRadius: '50px',
+                padding: '10px',
+                backgroundColor: 'rgba(0,0,0,0.5)',
+              }}>
+              <img
+                style={{
+                  width: 420,
+                  height: 'auto',
 
-                marginRight: 'auto',
-                marginLeft: 'auto',
-              }}
-              className="img-fluid"
-              alt="gifload"
-              src="DimeAssets/searchcoin.gif"
-            />
-            <button
-              style={{ display: 'block', margin: 'auto' }}
-              onClick={handleSearchClose}
-              className="btn btn-outline-light">
-              Stop Searching
-            </button>
-          </div>
+                  marginRight: 'auto',
+                  marginLeft: 'auto',
+                }}
+                className="img-fluid"
+                alt="gifload"
+                src="DimeAssets/searchcoin.gif"
+              />
+
+              <button
+                style={{ display: 'block', margin: 'auto' }}
+                onClick={handleSearchClose}
+                className="btn btn-outline-light">
+                Stop Searching
+              </button>
+            </div>
+          </Zoom>
         </Modal>
       </main>
-
+      <Backdrop
+        className={classes.backdrop}
+        open={previousMatchesLoading}
+        onClick={() => {}}>
+        <CircularProgress color="inherit" />
+      </Backdrop>
       <Drawer
         className={classes.drawer}
         variant="persistent"
@@ -1131,14 +1235,19 @@ export default function Home() {
         <Divider style={{ background: '#e64398' }} />
         <List>
           {itemsList.map((item, index) => {
-            const { text, icon, onClick } = item;
+            const { text, icon, tooltip, onClick } = item;
             return (
               <ListItem button key={text} onClick={onClick}>
                 {icon && <ListItemIcon>{icon}</ListItemIcon>}
-                <ListItemText
-                  classes={{ primary: classes.listItemText }}
-                  primary={text}
-                />
+                <Tooltip
+                  placement="left"
+                  TransitionComponent={Zoom}
+                  title={tooltip}>
+                  <ListItemText
+                    classes={{ primary: classes.listItemText }}
+                    primary={text}
+                  />
+                </Tooltip>
               </ListItem>
             );
           })}
@@ -1201,6 +1310,8 @@ export default function Home() {
           <LinearProgress variant="determinate" value={progress} />
         </div>
       )}
+      {/* To cache the search coin gif! */}
+      <img hidden src="DimeAssets/searchcoin.gif" />
     </React.Fragment>
   );
 }

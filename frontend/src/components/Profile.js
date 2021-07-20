@@ -22,6 +22,9 @@ import CheckIcon from '@material-ui/icons/Check';
 // import SaveIcon from '@material-ui/icons/Save';
 import Button from '@material-ui/core/Button';
 import clsx from 'clsx';
+import Zoom from '@material-ui/core/Zoom';
+import Fade from '@material-ui/core/Fade';
+import Collapse from '@material-ui/core/Collapse';
 import { makeStyles, useTheme } from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
@@ -314,11 +317,14 @@ export default function Profile() {
             birth: userBirth,
             exitMessage: userExitMessage,
             firstName: userFirstName,
+            lastName: userLastName,
+            phone: userPhone,
             sex: userSex,
             sexOrientation: userOrientation,
             photo: photo,
             ageRangeMin: ageRangeMin,
             ageRangeMax: ageRangeMax,
+            uid: currentUser.uid,
           })
         );
       }
@@ -449,35 +455,46 @@ export default function Profile() {
             hidden
             type="file"
           />
-
+          <button
+            className="btn btn-primary"
+            style={{
+              marginBottom: showPicUploader ? '0px' : '15px',
+            }}
+            onClick={() => setShowPicUploader(!showPicUploader)}>
+            Change Profile Picture {showPicUploader && '(hide)'}
+          </button>
           {showPicUploader && (
             <div className={classes.wrapper}>
               {showPicUploader && (
-                <label htmlFor="photoUploadGroup">
-                  <Button
-                    variant="contained"
-                    id="uploadButton"
-                    style={{ color: 'white', marginRight: '10px' }}
-                    component="span"
-                    startIcon={<AttachmentIcon />}>
-                    {showPicUploader && selectedFile === ''
-                      ? 'Select'
-                      : selectedFile.length > 25
-                      ? selectedFile.substring(0, 25) + '...'
-                      : selectedFile}
-                  </Button>
-                </label>
+                <Zoom in={showPicUploader}>
+                  <label htmlFor="photoUploadGroup">
+                    <Button
+                      variant="contained"
+                      id="uploadButton"
+                      style={{ color: 'white', marginRight: '10px' }}
+                      component="span"
+                      startIcon={<AttachmentIcon />}>
+                      {showPicUploader && selectedFile === ''
+                        ? 'Select'
+                        : selectedFile.length > 25
+                        ? selectedFile.substring(0, 25) + '...'
+                        : selectedFile}
+                    </Button>
+                  </label>
+                </Zoom>
               )}
-              <Fab
-                aria-label="save"
-                color="primary"
-                className={buttonClassname}
-                style={{ display: 'inline', backgroundColor: '#b39bc8' }}
-                onClick={() => {
-                  if (selectedFile) processPhoto();
-                }}>
-                {success ? <CheckIcon /> : <CloudUploadIcon />}
-              </Fab>
+              <Zoom in={showPicUploader}>
+                <Fab
+                  aria-label="save"
+                  color="primary"
+                  className={buttonClassname}
+                  style={{ display: 'inline', backgroundColor: '#b39bc8' }}
+                  onClick={() => {
+                    if (selectedFile) processPhoto();
+                  }}>
+                  {success ? <CheckIcon /> : <CloudUploadIcon />}
+                </Fab>
+              </Zoom>
               {isUploading && (
                 <CircularProgress size={68} className={classes.fabProgress} />
               )}
@@ -492,14 +509,7 @@ export default function Profile() {
               {error}
             </Alert>
           )}
-          <button
-            className="btn btn-primary"
-            style={{
-              marginBottom: '15px',
-            }}
-            onClick={() => setShowPicUploader(!showPicUploader)}>
-            Change Profile Picture {showPicUploader && '(hide)'}
-          </button>
+
           <Link
             to="/update-profile"
             className="btn btn-primary"

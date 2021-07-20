@@ -70,6 +70,7 @@ export default function SignUp() {
       .required()
       .trim('You need to list a phone number.')
       .length(14),
+    endOfChat: yup.string().max(280),
   });
 
   const history = useHistory();
@@ -260,6 +261,7 @@ export default function SignUp() {
               sex: '',
               sexOrientation: '',
               phone: '',
+              endOfChat: '',
             }}>
             {({
               handleSubmit,
@@ -497,8 +499,16 @@ export default function SignUp() {
                   <Form.Control
                     type="text"
                     ref={responseRef}
+                    value={values.endOfChat}
+                    name="endOfChat"
+                    onChange={handleChange}
+                    isValid={touched.endOfChat && !errors.endOfChat}
+                    isInvalid={touched.endOfChat && errors.endOfChat}
                     placeholder="End of Chat Response"
                   />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.endOfChat && 'Response is too long!'}
+                  </Form.Control.Feedback>
                   <Form.Text className="text-muted">
                     Users will see this response at the end of a chat. This can
                     be changed later...
@@ -521,5 +531,3 @@ export default function SignUp() {
     </>
   );
 }
-
-
