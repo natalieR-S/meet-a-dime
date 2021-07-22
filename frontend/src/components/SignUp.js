@@ -152,6 +152,7 @@ export default function SignUp() {
       2: 'Homosexual',
       3: 'Bisexual',
       4: 'Bisexual',
+      5: 'Bisexual',
     };
     try {
       setError('');
@@ -231,7 +232,7 @@ export default function SignUp() {
         justifyContent="space-evenly"
         alignItems="flex-start"
         spacing={1}>
-        <Grid item xs={10} sm={10} md={5} lg={5} xl={5}>
+        <Grid item xs={10} sm={5} md={5} lg={5} xl={5}>
           <img
             id="signUpDimeImage"
             className="img-fluid"
@@ -239,7 +240,7 @@ export default function SignUp() {
             src="DimeAssets/coinsignup.png"
           />
         </Grid>
-        <Grid item xs={10} sm={10} md={5} lg={5} xl={5}>
+        <Grid item xs={10} sm={6} md={5} lg={5} xl={5}>
           {/* <Card.Body> */}
           <h2 className="text-center mb-3" style={{ color: '#929292' }}>
             Create an Account
@@ -441,7 +442,8 @@ export default function SignUp() {
                     <option value="1">Straight</option>
                     <option value="2">Gay/Lesbian</option>
                     <option value="3">Bisexual</option>
-                    <option value="4">Other</option>
+                    <option value="4">Questioning</option>
+                    <option value="5">Other</option>
                   </Form.Control>
                   <Form.Control.Feedback type="invalid">
                     {errors.sexOrientation ||

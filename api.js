@@ -97,6 +97,7 @@ exports.setApp = function (app, admin) {
           ageRangeMin: data.ageRangeMin,
           ageRangeMax: data.ageRangeMax,
           uid: obj.uid,
+          initializedProfile: data.initializedProfile,
         };
       }
     } catch (error) {
@@ -138,6 +139,21 @@ exports.setApp = function (app, admin) {
           firstName: data.firstName,
           sex: data.sex,
           photo: data.photo,
+          initializedProfile: data.initializedProfile,
+          answers: [
+            data.question1Answer,
+            data.question2Answer,
+            data.question3Answer,
+            data.question4Answer,
+            data.question5Answer,
+            data.question6Answer,
+            data.question7Answer,
+            data.question8Answer,
+            data.question9Answer,
+            data.question10Answer,
+            data.question11Answer,
+            data.question12Answer,
+          ],
         };
       }
     } catch (error) {

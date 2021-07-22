@@ -30,6 +30,7 @@ export default function UpdateProfile() {
   const firestore = firebase.firestore();
   const { currentUser, updatePassword, updateEmail, deleteUser } = useAuth();
   const [error, setError] = useState('');
+  const [passError, setPasswordError] = useState('');
   const [passChange, setPassChange] = useState('');
   const [loading, setLoading] = useState('');
   const [optionsState, setOptionsState] = useState('0');
@@ -124,10 +125,12 @@ export default function UpdateProfile() {
   }
 
   async function handlePasswordUpdate(e) {
+    setPasswordError('');
+    setPassChange('');
     if (passwordRef.current.value !== passwordConfirmRef.current.value) {
       setPassChange('');
-      scrollToTop();
-      return setError('Passwords do not match.');
+
+      return setPasswordError('Passwords do not match.');
     }
 
     if (
@@ -135,14 +138,17 @@ export default function UpdateProfile() {
       passwordRef.current.value.length !== ''
     ) {
       setPassChange('');
-      scrollToTop();
-      return setError('Password should be more than six characters.');
+
+      return setPasswordError('Password should be more than six characters.');
     }
 
     if (passwordRef.current.value) {
-      updatePassword(passwordRef.current.value);
-      scrollToTop();
-      return setPassChange('Password successfully changed!');
+      try {
+        await updatePassword(passwordRef.current.value);
+        return setPassChange('Password successfully changed!');
+      } catch (error) {
+        setPasswordError(error);
+      }
     }
   }
 
@@ -361,6 +367,7 @@ export default function UpdateProfile() {
   }
 
   useEffect(() => {
+    scrollToTop();
     fetchUserData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -374,7 +381,7 @@ export default function UpdateProfile() {
         <Card.Body>
           <h1 className="header text-center mb-3">Update Profile</h1>
           {error && <Alert variant="danger">{error}</Alert>}
-          {passChange && <Alert variant="success">{passChange}</Alert>}
+
           <Container>
             <Form onSubmit={handleSubmit}>
               <Form.Group id="firstName">
@@ -405,31 +412,9 @@ export default function UpdateProfile() {
                   defaultValue={currentUser.email}
                 />
                 <Form.Text className="text-muted">
-                  We will never share your email with anyone.
+                  Changing your email will require re-verification ⚠️
                 </Form.Text>
               </Form.Group>
-              <br></br>
-              <Form.Group id="password">
-                <Form.Label>New password</Form.Label>
-                <Form.Control
-                  type="password"
-                  ref={passwordRef}
-                  placeholder="Leave blank to keep the same."
-                />
-              </Form.Group>
-              <Form.Group id="password-confirm">
-                <Form.Label>New password confirmation</Form.Label>
-                <Form.Control
-                  type="password"
-                  ref={passwordConfirmRef}
-                  placeholder="Leave blank to keep the same."
-                />
-              </Form.Group>
-              <Button className="w-100 mt-3" onClick={handlePasswordUpdate}>
-                Change Password
-              </Button>
-              <br></br>
-              <br></br>
               <Form.Group id="dob">
                 <Form.Label>Date of Birth</Form.Label>
                 <Form.Control
@@ -439,9 +424,6 @@ export default function UpdateProfile() {
                   onChange={(e) => dateWork(e.target.value)}
                   required
                 />
-                <Form.Text className="text-muted">
-                  You must be 18+ years
-                </Form.Text>
               </Form.Group>
               <Form.Row id="sex">
                 <Form.Label>Sex</Form.Label>
@@ -522,8 +504,8 @@ export default function UpdateProfile() {
                   defaultValue={userExitMessage}
                 />
                 <Form.Text className="text-muted">
-                  Users will see this response at the end of a chat. This can be
-                  changed later...
+                  Users will see this response at the end of a chat if all goes
+                  well.
                 </Form.Text>
               </Form.Group>
               <Form.Group id="phoneGroup">
@@ -538,10 +520,39 @@ export default function UpdateProfile() {
               <Button disabled={loading} className="w-100 mt-2" type="submit">
                 Save Changes
               </Button>
-              <Button className="btn-abandon w-100 mt-2" onClick={handleDelete}>
-                Delete Account
+            </Form>
+            <hr></hr>
+            <Form className="change-profile-form">
+              {passChange && <Alert variant="success">{passChange}</Alert>}
+              {passError && <Alert variant="danger">{passError}</Alert>}
+              <Form.Group id="password">
+                <Form.Label>New password</Form.Label>
+                <Form.Control
+                  type="password"
+                  ref={passwordRef}
+                  placeholder="Leave blank to keep the same."
+                />
+              </Form.Group>
+              <Form.Group id="password-confirm">
+                <Form.Label>New password confirmation</Form.Label>
+                <Form.Control
+                  type="password"
+                  ref={passwordConfirmRef}
+                  placeholder="Leave blank to keep the same."
+                />
+              </Form.Group>
+              <Button className="w-100 mt-3" onClick={handlePasswordUpdate}>
+                Change Password
               </Button>
             </Form>
+
+            <hr></hr>
+            <Button
+              className="btn-abandon w-100 mt-2"
+              id="delete-button"
+              onClick={handleDelete}>
+              Delete Account
+            </Button>
           </Container>
         </Card.Body>
       </Card>

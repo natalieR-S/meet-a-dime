@@ -35,8 +35,10 @@ import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import HomeIcon from '@material-ui/icons/Home';
 import Collapse from '@material-ui/core/Collapse';
-
+import Zoom from '@material-ui/core/Zoom';
+import Slide from '@material-ui/core/Slide';
 import CloseIcon from '@material-ui/icons/Close';
+import Grow from '@material-ui/core/Grow';
 // import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 
 var bp = require('../Path.js');
@@ -87,7 +89,7 @@ const useStyles = makeStyles((theme) => ({
   },
   listItemText: {
     fontSize: '25px',
-    fontWeight: 'bold',
+
     color: '#E64398',
   },
   content: {
@@ -138,7 +140,7 @@ export default function After() {
   const { currentUser } = useAuth();
 
   const [match_age, setMatchAge] = useState('');
-  const [match_name, setMatchName] = useState('user');
+  const [match_name, setMatchName] = useState('');
   const [match_sex, setMatchSex] = useState('');
   const [match_photo, setMatchPhoto] = useState('');
   const [match_id, setMatchID] = useState('');
@@ -349,6 +351,7 @@ export default function After() {
         direction="column"
         justifyContent="flex-end"
         alignItems="center"
+        className="match-photo-container"
         style={{
           marginTop: '100px',
         }}>
@@ -550,58 +553,49 @@ export default function After() {
             </Alert>
           )}
         </Collapse>
-
-        {match_photo !== '' ? (
-          <ReactRoundedImage
-            imageHeight="150"
-            imageWidth="150"
-            image={match_photo}
-            id="photo"
-            roundedSize="13"
-            borderRadius="150"
-            alt="My Profile Pic"
-            hoverColor="pink"
-            style={{
-              marginTop: '25px',
-            }}
-          />
-        ) : (
-          <ReactRoundedImage
-            className="img-fluid"
-            image="DimeAssets/coinsignup.png"
-            height="300px"
-            width="300px"
-            roundedSize="13"
-            borderRadius="150"
-            alt="Default Pic"
-            hoverColor="pink"
-            style={{
-              marginTop: '25px',
-            }}
-          />
-        )}
-        <h2 className="text-center mb-3" style={{ color: '#E64398' }}>
-          {match_name}
-        </h2>
-        <div id="made-match-div">
-          {pageType === 'match_made' && (
+        <Collapse in={match_photo !== ''}>
+          <>
+            {match_photo !== '' ? (
+              <ReactRoundedImage
+                imageHeight="150"
+                imageWidth="150"
+                image={match_photo}
+                id="photo"
+                roundedSize="13"
+                borderRadius="150"
+                alt="My Profile Pic"
+                hoverColor="pink"
+                style={{
+                  marginTop: '25px',
+                }}
+              />
+            ) : null}
+            <h2 className="text-center mb-3" style={{ color: '#E64398' }}>
+              {match_name}
+            </h2>
+          </>
+        </Collapse>
+        <Zoom direction="up" in={match_phoneNumber !== ''}>
+          <div id="made-match-div">
+            {/* {pageType === 'match_made' && (
             <h3 style={{ color: '#e4a', fontSize: 'calc(1rem + .6vw)' }}>
               Congratulations!
             </h3>
-          )}
-          {pageType === 'match_made' && (
-            <h3 style={{ color: '#e4a' }}>
-              <PhoneIphoneIcon style={{ color: '#e4a' }} />
-              {match_phoneNumber}
-            </h3>
-          )}
-          {pageType === 'match_made' && (
-            <h3 style={{ color: '#e4a' }}>
-              <ChatBubbleOutlineIcon style={{ color: '#e4a' }} />{' '}
-              {match_exitMessage}
-            </h3>
-          )}
-        </div>
+          )} */}
+            {pageType === 'match_made' && (
+              <h3 style={{ color: '#e4a' }}>
+                <PhoneIphoneIcon style={{ color: '#e4a' }} />
+                {match_phoneNumber}
+              </h3>
+            )}
+            {pageType === 'match_made' && (
+              <h3 style={{ color: '#e4a' }}>
+                <ChatBubbleOutlineIcon style={{ color: '#e4a' }} />{' '}
+                {match_exitMessage}
+              </h3>
+            )}
+          </div>
+        </Zoom>
       </Grid>
       {/* <Button variant="contained" color="primary" onClick={redirectToHome}>
         Home
@@ -630,7 +624,11 @@ export default function After() {
           {itemsList.map((item, index) => {
             const { text, icon, onClick } = item;
             return (
-              <ListItem button key={text} onClick={onClick}>
+              <ListItem
+                className="drawer-item"
+                button
+                key={text}
+                onClick={onClick}>
                 {icon && <ListItemIcon>{icon}</ListItemIcon>}
                 <ListItemText
                   classes={{ primary: classes.listItemText }}

@@ -40,7 +40,9 @@ import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import HomeIcon from '@material-ui/icons/Home';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
-
+import CreateIcon from '@material-ui/icons/Create';
+import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
+import PhotoCameraIcon from '@material-ui/icons/PhotoCamera';
 // Drawer
 const drawerWidth = 300;
 
@@ -86,7 +88,7 @@ const useStyles = makeStyles((theme) => ({
   },
   listItemText: {
     fontSize: '25px',
-    fontWeight: 'bold',
+
     color: '#E64398',
   },
   content: {
@@ -292,6 +294,7 @@ export default function Profile() {
         var photo = doc.data().photo;
         var ageRangeMax = doc.data().ageRangeMax;
         var ageRangeMin = doc.data().ageRangeMin;
+        var userInitializedProfile = doc.data().initializedProfile;
         // document.getElementById('birth').innerHTML = userBirth;
         // document.getElementById('first').innerHTML = userFirstName;
         // document.getElementById('last').innerHTML = userLastName;
@@ -325,6 +328,7 @@ export default function Profile() {
             ageRangeMin: ageRangeMin,
             ageRangeMax: ageRangeMax,
             uid: currentUser.uid,
+            initializedProfile: userInitializedProfile,
           })
         );
       }
@@ -401,7 +405,7 @@ export default function Profile() {
           direction="column"
           justifyContent="flex-start"
           alignItems="center"
-          className="mt-4">
+          className="mt-4 match-photo-container">
           {myPhoto !== '' ? (
             <ReactRoundedImage
               imageHeight="300"
@@ -461,7 +465,8 @@ export default function Profile() {
               marginBottom: showPicUploader ? '0px' : '15px',
             }}
             onClick={() => setShowPicUploader(!showPicUploader)}>
-            Change Profile Picture {showPicUploader && '(hide)'}
+            <PhotoCameraIcon style={{ marginBottom: '2px' }} /> Change Profile
+            Picture {showPicUploader && '(hide)'}
           </button>
           {showPicUploader && (
             <div className={classes.wrapper}>
@@ -516,7 +521,7 @@ export default function Profile() {
             style={{
               marginBottom: '15px',
             }}>
-            Update Profile
+            Update Profile <CreateIcon style={{ marginBottom: '5px' }} />
           </Link>
           <Link
             to="/prompts"
@@ -524,7 +529,8 @@ export default function Profile() {
             style={{
               marginBottom: '15px',
             }}>
-            Conversation Starters
+            <QuestionAnswerIcon style={{ marginBottom: '2px' }} /> Conversation
+            Starters
           </Link>
         </Grid>
       </main>
@@ -553,7 +559,11 @@ export default function Profile() {
           {itemsList.map((item, index) => {
             const { text, icon, onClick } = item;
             return (
-              <ListItem button key={text} onClick={onClick}>
+              <ListItem
+                className="drawer-item"
+                button
+                key={text}
+                onClick={onClick}>
                 {icon && <ListItemIcon>{icon}</ListItemIcon>}
                 <ListItemText
                   classes={{ primary: classes.listItemText }}

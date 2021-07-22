@@ -40,11 +40,12 @@ import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
-import CreateIcon from '@material-ui/icons/Create';
+
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 // import TextField from '@material-ui/core/TextField';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import Tooltip from '@material-ui/core/Tooltip';
+import PersonIcon from '@material-ui/icons/Person';
 
 // import Paper from '@material-ui/core/Paper';
 // import Grid from '@material-ui/core/Grid';
@@ -99,7 +100,7 @@ const useStyles = makeStyles((theme) => ({
   },
   listItemText: {
     fontSize: '25px',
-    fontWeight: 'bold',
+
     color: '#E64398',
   },
   content: {
@@ -135,11 +136,16 @@ export default function Home() {
     setOpen(false);
   };
 
+  function checkMouse() {
+    // console.log(mouseRef.current);
+    return mouseRef.current;
+  }
+
   //Search Modal Functions
   const [sopen, setOpenSearch] = React.useState(false);
 
   const handleSearchOpen = () => {
-    setTooltipOpen(false);
+    // setTooltipOpen(false);
     setOpenSearch(true);
     handleDrawerClose();
     searching();
@@ -159,8 +165,8 @@ export default function Home() {
     },
     {
       tooltip: 'Change your preferences and upload a photo!',
-      text: 'Edit Profile',
-      icon: <CreateIcon style={{ color: '#e64398' }} />,
+      text: 'Profile',
+      icon: <PersonIcon style={{ color: '#e64398' }} />,
       onClick: redirectToProfile,
     },
     {
@@ -190,6 +196,10 @@ export default function Home() {
   const [timeoutSnackbar, setTimeoutSnackbar] = useState(false);
   const [previousMatchesLoading, setPreviousMatchesLoading] = useState(false);
   const matchSearchbarRef = useRef('');
+  const scrollRef = useRef(null);
+  // const [tooltipOpen, setTooltipOpen] = useState(false);
+  const [mouseOverDiv, setMouseOverDiv] = useState(false);
+  const mouseRef = useRef(false);
   const [searchMatchesOnce, setSearchMatchesOnce] = useState(false);
 
   const [name, setName] = useState('');
@@ -363,8 +373,34 @@ export default function Home() {
     getIntialUserPhoto();
     fetchSuccessMatch('', true);
 
+    function scrollHandler(e) {
+      if (checkMouse()) {
+        e.preventDefault();
+
+        if (
+          e.deltaY > 0 &&
+          document.getElementById('home-scrolling') !== null
+        ) {
+          document
+            .getElementById('home-scrolling')
+            .scrollBy(e.deltaY / 3, 0, 'smooth');
+        }
+        if (
+          e.deltaY < 0 &&
+          document.getElementById('home-scrolling') !== null
+        ) {
+          document
+            .getElementById('home-scrolling')
+            .scrollBy(e.deltaY / 3, 0, 'smooth');
+        }
+      }
+    }
+
+    window.addEventListener('wheel', scrollHandler, { passive: false });
+
     return () => {
       clearTimeout(timeout5.current);
+      window.removeEventListener('wheel', scrollHandler);
       clearAllTimeouts();
       console.log('LEAVING!');
       if (observer.current !== null) {
@@ -987,8 +1023,6 @@ export default function Home() {
     }
   }
 
-  const [tooltipOpen, setTooltipOpen] = useState(false);
-
   // The actual JSX components. The top is the errors/match states,
   // conditionally rendered.
   return (
@@ -1012,26 +1046,17 @@ export default function Home() {
               </Navbar.Brand>
             </Navbar>
           </Typography>
-          <Tooltip
-            open={tooltipOpen}
-            onOpen={() => {
-              setTooltipOpen(true);
-            }}
-            onClose={() => {
-              setTooltipOpen(false);
-            }}
-            TransitionComponent={Zoom}
-            title={'Find a Dime!'}>
-            <span>
-              <Button
-                hidden={open}
-                className="btn-chat mx-3"
-                disabled={lockout}
-                onClick={handleSearchOpen}>
-                New Chat
-              </Button>
-            </span>
-          </Tooltip>
+
+          <span>
+            <Button
+              hidden={open}
+              className="btn-chat mx-3"
+              disabled={lockout}
+              onClick={handleSearchOpen}>
+              New Chat
+            </Button>
+          </span>
+
           <IconButton
             color="default"
             aria-label="open drawer"
@@ -1093,10 +1118,12 @@ export default function Home() {
               <a
                 href="#"
                 style={{ color: 'white' }}
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.preventDefault();
                   console.log('RETURN');
-
+                  if (localStorage.getItem('user_data') === null) {
+                    await fetchData();
+                  }
                   history.push('/chat', {
                     state: {
                       match_id: JSON.parse(localStorage.getItem('inActiveChat'))
@@ -1112,20 +1139,12 @@ export default function Home() {
         )}
         {matchesArray && matchesArray.length !== 0 && (
           <div
-            onDrag={(e) => console.log(e.clientX)}
-            onWheel={(e) => {
-              if (e.deltaY > 0) {
-                document
-                  .getElementById('home-scrolling')
-                  .scrollBy(e.deltaY / 3, 0, 'smooth');
-                window.scrollBy(0, e.deltaY, 'smooth');
-              }
-              if (e.deltaY < 0) {
-                document
-                  .getElementById('home-scrolling')
-                  .scrollBy(e.deltaY / 3, 0, 'smooth');
-                window.scrollBy(0, e.deltaY, 'smooth');
-              }
+            ref={scrollRef}
+            onMouseEnter={(e) => {
+              mouseRef.current = true;
+            }}
+            onMouseLeave={(e) => {
+              mouseRef.current = false;
             }}
             id="home-scrolling">
             {matchesArray.map((vals, index) => {
@@ -1237,18 +1256,20 @@ export default function Home() {
           {itemsList.map((item, index) => {
             const { text, icon, tooltip, onClick } = item;
             return (
-              <ListItem button key={text} onClick={onClick}>
-                {icon && <ListItemIcon>{icon}</ListItemIcon>}
-                <Tooltip
-                  placement="left"
-                  TransitionComponent={Zoom}
-                  title={tooltip}>
+              <Tooltip
+                key={text}
+                placement="left"
+                TransitionComponent={Zoom}
+                title={tooltip}>
+                <ListItem className="drawer-item" button onClick={onClick}>
+                  {icon && <ListItemIcon>{icon}</ListItemIcon>}
+
                   <ListItemText
                     classes={{ primary: classes.listItemText }}
                     primary={text}
                   />
-                </Tooltip>
-              </ListItem>
+                </ListItem>
+              </Tooltip>
             );
           })}
         </List>

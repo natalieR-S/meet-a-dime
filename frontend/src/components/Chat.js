@@ -23,6 +23,7 @@ import 'firebase/auth';
 import 'firebase/firestore';
 import moment from 'moment';
 import Zoom from '@material-ui/core/Zoom';
+import Collapse from '@material-ui/core/Collapse';
 import IconButton from '@material-ui/core/IconButton';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import imageCompression from 'browser-image-compression';
@@ -48,10 +49,12 @@ import ErrorIcon from '@material-ui/icons/Error';
 import AddPhotoAlternateIcon from '@material-ui/icons/AddPhotoAlternate';
 import SendIcon from '@material-ui/icons/Send';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import AccountBoxIcon from '@material-ui/icons/AccountBox';
+import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
 
 var bp = require('../Path.js');
 const firestore = firebase.firestore();
-const EXPIRE_IN_MINUTES = 4; // 10 minutes
+const EXPIRE_IN_MINUTES = 0.4; // 10 minutes
 const MESSAGE_IMAGE_WIDTH = 250; // just a const for easy changing.
 const modalExpire = 10000; // 30 seconds in MS
 
@@ -101,7 +104,7 @@ const useStyles = makeStyles((theme) => ({
   },
   listItemText: {
     fontSize: '25px',
-    fontWeight: 'bold',
+
     color: '#E64398',
   },
   listItemReportText: {
@@ -130,7 +133,7 @@ const useStyles = makeStyles((theme) => ({
 export default function Chat() {
   // Drawer
   const classes = useStyles();
-  const itemsList = [
+  const itemsList = useRef([
     {
       text: 'Home',
       tooltip: 'This will abandon your match!',
@@ -153,7 +156,7 @@ export default function Chat() {
         doubleCheck(handleReport, 'report');
       },
     },
-  ];
+  ]);
 
   const theme = useTheme();
   const [open, setOpen] = React.useState(false);
@@ -166,15 +169,15 @@ export default function Chat() {
     setOpen(false);
   };
 
-  const [modalOpen, setModalOpen] = React.useState(false);
+  // const [modalOpen, setModalOpen] = React.useState(false);
 
-  const handleModalOpen = () => {
-    setModalOpen(true);
-  };
+  // const handleModalOpen = () => {
+  //   setModalOpen(true);
+  // };
 
-  const handleModalClose = () => {
-    setModalOpen(false);
-  };
+  // const handleModalClose = () => {
+  //   setModalOpen(false);
+  // };
 
   const [switching, setSwitching] = useState(false);
 
@@ -188,6 +191,7 @@ export default function Chat() {
   const timeoutRef2 = useRef();
   const extendedTimeoutRef = useRef();
   const socketRef = useRef();
+  const roomRef = useRef();
 
   const [room, setRoom] = useState('');
   //const [message, setMessage] = useState('');
@@ -201,9 +205,55 @@ export default function Chat() {
 
   const [match_age, setMatchAge] = useState('');
   const [match_name, setMatchName] = useState('user');
+  const [bothInitialized, setBothInitialized] = useState(false);
   const [match_sex, setMatchSex] = useState('');
   const [match_photo, setMatchPhoto] = useState('');
+  const [match_initialized, setMatchInitialized] = useState(-1);
+  const [match_responses, setMatchResponses] = useState([]);
+
   const [my_photo, setMyPhoto] = useState('');
+  const [user_initialized, setUserInitialized] = useState(-1);
+
+  const question1 = 'What do you like to do for fun or to relax?';
+  const question2 = 'What do you do for a living?';
+  const question3 = 'Would you say you are a romantic?';
+  const question4 = 'Are you an optimist or a pessimist?';
+  const question5 = 'What are you most passionate about?';
+  const question6 = "Do you like horoscopes? If so, what's your sign?";
+  const question7 = 'What does an ideal date look like in your eyes?';
+  const question8 = 'What does your ideal future look like?';
+  const question9 = 'What is your favorite type of music?';
+  const question10 = 'Do you have any pets? If you do, tell me about them!';
+  const question11 = 'Do you have any sibilings? If so, how many?';
+  const question12 = 'What is your favorite game to play?';
+  const questions = [
+    question1,
+    question2,
+    question3,
+    question4,
+    question5,
+    question6,
+    question7,
+    question8,
+    question9,
+    question10,
+    question11,
+    question12,
+  ];
+  const question_emojis = [
+    '🌴',
+    '💸',
+    '😘',
+    '😄',
+    '🎺',
+    '♑',
+    '🥰',
+    '🔮',
+    '🎵',
+    '🐾',
+    '👨‍👨‍👦‍👦',
+    '🎮',
+  ];
 
   const [isOffline, setIsOffline] = useState(false);
 
@@ -239,7 +289,7 @@ export default function Chat() {
     console.log('DOESNT BELONG');
     if (timeoutRef1.current !== undefined) clearTimeout(timeoutRef1.current);
     if (timeoutRef2.current !== undefined) clearTimeout(timeoutRef2.current);
-    window.location.href = '/';
+    // window.location.href = '/';
   }
 
   document.getElementById('room-button');
@@ -275,8 +325,37 @@ export default function Chat() {
       setMatchName(response.data.firstName);
       setMatchSex(response.data.sex);
       setMatchPhoto(response.data.photo);
+      setMatchInitialized(response.data.initializedProfile);
       matchPhotoRef.current = response.data.photo;
       var my_profile_pic = JSON.parse(localStorage.getItem('user_data')).photo;
+      var my_initialized = JSON.parse(
+        localStorage.getItem('user_data')
+      ).initializedProfile;
+
+      // console.log(my_initialized);
+      // console.log(response.data.initializedProfile);
+      if (my_initialized === 1 && response.data.initializedProfile === 1) {
+        setBothInitialized(true);
+        setMatchResponses(response.data.answers);
+        // console.log(response.data.answers);
+        var temp = [];
+        temp.push(itemsList.current[0]);
+        temp.push({
+          text: 'Match Q & A',
+          tooltip: 'See what the other user answered to the random question!',
+          icon: <QuestionAnswerIcon style={{ color: '#e64398' }} />,
+          onClick: () => {
+            handleRandomQuestion(
+              response.data.firstName,
+              response.data.answers
+            );
+          },
+        });
+        temp.push(itemsList.current[1]);
+
+        temp.push(itemsList.current[2]);
+        itemsList.current = temp;
+      }
       myPhotoRef.current = my_profile_pic;
     } catch (error) {
       console.log(error);
@@ -675,7 +754,19 @@ export default function Chat() {
     // This is a timeout that carried over from the last page. It deletes
     // the doc in the background.
     clearTimeout(timeout_5);
-    setMyPhoto(JSON.parse(localStorage.getItem('user_data')).photo);
+    try {
+      setMyPhoto(JSON.parse(localStorage.getItem('user_data')).photo);
+      setUserInitialized(
+        JSON.parse(localStorage.getItem('user_data')).initializedProfile
+      );
+    } catch (e) {
+      console.log('DOESNT BELONG, no data');
+      clearChatData();
+      if (timeoutRef1.current !== undefined) clearTimeout(timeoutRef1.current);
+      if (timeoutRef2.current !== undefined) clearTimeout(timeoutRef2.current);
+      window.location.href = '/';
+      return;
+    }
 
     // In case the user navigates here directly by accident.
     if (
@@ -773,6 +864,7 @@ export default function Chat() {
         if (message === 'joined') {
           console.log('callback called, joining room now.');
           setRoom(new_room);
+          roomRef.current = new_room;
           roomInUseEffect = new_room;
           localStorage.setItem(
             'inActiveChat',
@@ -1023,6 +1115,7 @@ export default function Chat() {
             if (message === 'joined') {
               console.log('callback called, joining room now.');
               setRoom(new_room);
+              roomRef.current = new_room;
               roomInUseEffect = new_room;
               localStorage.setItem(
                 'inActiveChat',
@@ -1049,6 +1142,10 @@ export default function Chat() {
     };
     return () => {
       console.log('Cleanup in Chat.js.');
+      if (timeoutRef1.current !== undefined) clearTimeout(timeoutRef1.current);
+      if (timeoutRef2.current !== undefined) clearTimeout(timeoutRef2.current);
+      if (extendedTimeoutRef.current !== undefined)
+        clearTimeout(extendedTimeoutRef.current);
       window.ononline = null;
       window.onoffline = null;
       if (roomInUseEffect !== '' && sock !== undefined && sock !== null) {
@@ -1332,6 +1429,13 @@ export default function Chat() {
     }
   }
 
+  function handleRandomQuestion(matches_firstname, match_responses) {
+    var random_num = Math.floor(Math.random() * 12);
+    var selected = questions[random_num];
+    var related_emoji = question_emojis[random_num];
+    displayMessage(`${matches_firstname} was asked: ${selected}\n`, 'system');
+    displayMessage(`${related_emoji} ${match_responses[random_num]}`, 'system');
+  }
   async function handleReport() {
     var chat_history = [];
 
@@ -1377,7 +1481,7 @@ export default function Chat() {
       console.log(error);
     }
 
-    socket.emit('leave-room', currentUser.uid, room);
+    socketRef.current.emit('leave-room', currentUser.uid, roomRef.current);
     console.log('REPORTED OTHER USER.');
     clearChatData();
     try {
@@ -1423,7 +1527,7 @@ export default function Chat() {
           FailMatch: firebase.firestore.FieldValue.arrayUnion(currentUser.uid),
         });
 
-      socket.emit('leave-room', currentUser.uid, room);
+      socketRef.current.emit('leave-room', currentUser.uid, roomRef.current);
       console.log('LEFT ROOM DUE TO LOGOUT');
       clearChatData();
       if (timeoutRef1.current !== undefined) clearTimeout(timeoutRef1.current);
@@ -1442,7 +1546,7 @@ export default function Chat() {
 
   function redirectToHome() {
     // socket.emit('leave-room', currentUser.uid, room);
-    socket.emit('leave-room', currentUser.uid, room);
+    socketRef.current.emit('leave-room', currentUser.uid, roomRef.current);
     console.log('LEFT ROOM WENT HOME');
     clearChatData();
     if (timeoutRef1.current !== undefined) clearTimeout(timeoutRef1.current);
@@ -1528,76 +1632,40 @@ export default function Chat() {
 
       {error && <Alert severity="error">{error}</Alert>}
 
-      <Grid
-        container
-        direction="column"
-        justifyContent="flex-end"
-        alignItems="center"
-        style={{
-          marginTop: '100px',
-        }}>
-        {match_photo !== '' ? (
-          <ReactRoundedImage
-            imageHeight="150"
-            imageWidth="150"
-            image={match_photo}
-            id="photo"
-            roundedSize="13"
-            borderRadius="150"
-            alt="My Profile Pic"
-            hoverColor="pink"
-            onClick={handleModalOpen}
-          />
-        ) : (
-          <ReactRoundedImage
-            className="img-fluid"
-            image="DimeAssets/coinsignup.png"
-            height="300px"
-            width="300px"
-            roundedSize="13"
-            borderRadius="150"
-            alt="Default Pic"
-            hoverColor="pink"
-            onClick={handleModalOpen}
-          />
-        )}
-        <Modal
+      <Collapse in={match_photo !== ''}>
+        <Grid
+          container
+          className="match-photo-container"
+          direction="column"
+          justifyContent="flex-end"
+          alignItems="center"
           style={{
-            marginRight: 'auto',
-            marginLeft: 'auto',
-            marginTop: '50%',
-            marginBottom: 'auto',
-          }}
-          open={modalOpen}
-          onClose={handleModalClose}>
-          <h2 className="text-center mb-3" style={{ color: '#E64398' }}>
-            {match_name}
-          </h2>
-          <h2 className="text-center mb-3" style={{ color: '#E64398' }}>
-            {match_age}
-          </h2>
-          <h2 className="text-center mb-3" style={{ color: '#E64398' }}>
-            {match_sex}
-          </h2>
-        </Modal>
-        {/*       <Button
-                  className="btn-chat mx-3"
-                  onClick={handleModalOpen}>
-                  Info
-          </Button>     */}
-        <h2 className="text-center mb-3" style={{ color: '#E64398' }}>
-          {match_name}
-        </h2>
-        <h2 className="text-center mb-3" style={{ color: '#E64398' }}>
-          {match_age}
-        </h2>
-        <h2 className="text-center mb-3" style={{ color: '#E64398' }}>
-          {match_sex}
-        </h2>
-      </Grid>
+            marginTop: '100px',
+          }}>
+          {match_photo !== '' ? (
+            <ReactRoundedImage
+              imageHeight="150"
+              imageWidth="150"
+              image={match_photo}
+              className="img-fluid"
+              roundedSize="13"
+              borderRadius="150"
+              alt="My Profile Pic"
+              hoverColor="pink"
+            />
+          ) : null}
 
+          <span
+            className="text-center mb-3 chat-match-info"
+            style={{ color: '#E64398' }}>
+            <AccountBoxIcon style={{ marginBottom: '2px' }} /> {match_name} •{' '}
+            {match_age} • {match_sex}
+          </span>
+        </Grid>
+      </Collapse>
       <React.Fragment>
         <Container>
+          <hr></hr>
           <div id="message-container" className=""></div>
           <div style={{ height: '60px' }} id="scrollReference"></div>
 
@@ -1719,7 +1787,7 @@ export default function Chat() {
         </div>
         <Divider style={{ background: '#e64398' }} />
         <List>
-          {itemsList.map((item, index) => {
+          {itemsList.current.map((item, index) => {
             const { text, icon, tooltip, onClick } = item;
             const redBGifReport =
               text === 'Report Chat' ? { backgroundColor: '#da3636' } : null;
@@ -1729,22 +1797,24 @@ export default function Chat() {
                 : classes.listItemText;
 
             return (
-              <ListItem
-                button
-                key={text}
-                onClick={onClick}
-                style={redBGifReport}>
-                {icon && <ListItemIcon>{icon}</ListItemIcon>}
-                <Tooltip
-                  placement="left"
-                  TransitionComponent={Zoom}
-                  title={tooltip}>
+              <Tooltip
+                placement="left"
+                TransitionComponent={Zoom}
+                title={tooltip}
+                key={text}>
+                <ListItem
+                  className="drawer-item"
+                  button
+                  onClick={onClick}
+                  style={redBGifReport}>
+                  {icon && <ListItemIcon>{icon}</ListItemIcon>}
+
                   <ListItemText
                     classes={{ primary: classToUse }}
                     primary={text}
                   />
-                </Tooltip>
-              </ListItem>
+                </ListItem>
+              </Tooltip>
             );
           })}
         </List>

@@ -46,6 +46,19 @@ export default function Prompts() {
   const answer12Ref = useRef();
   const history = useHistory();
 
+  const question1 = 'What do you like to do for fun or to relax?';
+  const question2 = 'What do you do for a living?';
+  const question3 = 'Would you say you are a romantic?';
+  const question4 = 'Are you an optimist or a pessimist?';
+  const question5 = 'What are you most passionate about?';
+  const question6 = "Do you like horoscopes? If so, what's your sign?";
+  const question7 = 'What does an ideal date look like in your eyes?';
+  const question8 = 'What does your ideal future look like?';
+  const question9 = 'What is your favorite type of music?';
+  const question10 = 'Do you have any pets? If you do, tell me about them!';
+  const question11 = 'Do you have any sibilings? If so, how many?';
+  const question12 = 'What is your favorite game to play?';
+
   function computeCharactersLeft(characters) {
     var difference = Math.max(MAX_ANSWER_LENGTH - characters, 0);
     var diffColor = '';
@@ -305,9 +318,7 @@ export default function Prompts() {
                 <Container>
                   <Form noValidate onSubmit={handleSubmit}>
                     <Form.Group id="question1Answer">
-                      <Form.Label>
-                        Question 1: What do you like to do for fun or to relax?
-                      </Form.Label>
+                      <Form.Label>Question 1: {question1}</Form.Label>
                       <InputGroup>
                         <Form.Control
                           type="text"
@@ -330,9 +341,7 @@ export default function Prompts() {
                       </InputGroup>
                     </Form.Group>
                     <Form.Group id="question2Answer">
-                      <Form.Label>
-                        Question 2: What do you do for a living?
-                      </Form.Label>
+                      <Form.Label>Question 2: {question2}</Form.Label>
                       <InputGroup>
                         <Form.Control
                           type="text"
@@ -355,9 +364,7 @@ export default function Prompts() {
                       </InputGroup>
                     </Form.Group>
                     <Form.Group id="question3Answer">
-                      <Form.Label>
-                        Question 3: Would you say you are a romantic?
-                      </Form.Label>
+                      <Form.Label>Question 3: {question3}</Form.Label>
                       <InputGroup>
                         <Form.Control
                           type="text"
@@ -380,9 +387,7 @@ export default function Prompts() {
                       </InputGroup>
                     </Form.Group>
                     <Form.Group id="question4Answer">
-                      <Form.Label>
-                        Question 4: Are you an optimist or a pessimist?
-                      </Form.Label>
+                      <Form.Label>Question 4: {question4}</Form.Label>
                       <InputGroup>
                         <Form.Control
                           type="text"
@@ -405,9 +410,7 @@ export default function Prompts() {
                       </InputGroup>
                     </Form.Group>
                     <Form.Group id="question5Answer">
-                      <Form.Label>
-                        Question 5: What are you most passionate about?
-                      </Form.Label>
+                      <Form.Label>Question 5: {question5}</Form.Label>
                       <InputGroup>
                         <Form.Control
                           type="text"
@@ -430,10 +433,7 @@ export default function Prompts() {
                       </InputGroup>
                     </Form.Group>
                     <Form.Group id="question6Answer">
-                      <Form.Label>
-                        Question 6: Do you like horoscopes? If so, what's your
-                        sign?
-                      </Form.Label>
+                      <Form.Label>Question 6: {question6}</Form.Label>
                       <InputGroup>
                         <Form.Control
                           type="text"
@@ -456,10 +456,7 @@ export default function Prompts() {
                       </InputGroup>
                     </Form.Group>
                     <Form.Group id="question7Answer">
-                      <Form.Label>
-                        Question 7: What does an ideal date look like in your
-                        eyes?
-                      </Form.Label>
+                      <Form.Label>Question 7: {question7}</Form.Label>
                       <InputGroup>
                         <Form.Control
                           type="text"
@@ -482,9 +479,7 @@ export default function Prompts() {
                       </InputGroup>
                     </Form.Group>
                     <Form.Group id="question8Answer">
-                      <Form.Label>
-                        Question 8: What does your ideal future look like?
-                      </Form.Label>
+                      <Form.Label>Question 8: {question8}</Form.Label>
                       <InputGroup>
                         <Form.Control
                           type="text"
@@ -507,9 +502,7 @@ export default function Prompts() {
                       </InputGroup>
                     </Form.Group>
                     <Form.Group id="question9Answer">
-                      <Form.Label>
-                        Question 9: What is your favorite type of music?
-                      </Form.Label>
+                      <Form.Label>Question 9: {question9}</Form.Label>
                       <InputGroup>
                         <Form.Control
                           type="text"
@@ -532,10 +525,7 @@ export default function Prompts() {
                       </InputGroup>
                     </Form.Group>
                     <Form.Group id="question10Answer">
-                      <Form.Label>
-                        Question 10: Do you have any pets? If you do, tell me
-                        about them!
-                      </Form.Label>
+                      <Form.Label>Question 10: {question10}</Form.Label>
                       <InputGroup>
                         <Form.Control
                           type="text"
@@ -558,9 +548,7 @@ export default function Prompts() {
                       </InputGroup>
                     </Form.Group>
                     <Form.Group id="question11Answer">
-                      <Form.Label>
-                        Question 11: Do you have any sibilings? If so, how many?
-                      </Form.Label>
+                      <Form.Label>Question 11: {question11}</Form.Label>
                       <InputGroup>
                         <Form.Control
                           type="text"
@@ -583,9 +571,7 @@ export default function Prompts() {
                       </InputGroup>
                     </Form.Group>
                     <Form.Group id="question12Answer">
-                      <Form.Label>
-                        Question 12: What is your favorite game to play?
-                      </Form.Label>
+                      <Form.Label>Question 12: {question12}</Form.Label>
                       <InputGroup>
                         <Form.Control
                           type="text"
