@@ -54,9 +54,9 @@ import QuestionAnswerIcon from '@material-ui/icons/QuestionAnswer';
 
 var bp = require('../Path.js');
 const firestore = firebase.firestore();
-const EXPIRE_IN_MINUTES = 0.4; // 10 minutes
+const EXPIRE_IN_MINUTES = 1; // 10 minutes
 const MESSAGE_IMAGE_WIDTH = 250; // just a const for easy changing.
-const modalExpire = 10000; // 30 seconds in MS
+const modalExpire = 30000; // 30 seconds in MS
 
 // Drawer
 const drawerWidth = 300;
@@ -362,8 +362,32 @@ export default function Chat() {
     }
   }
 
-  async function checkSearchingDoc(socketInstance) {
+  async function setIsChatting() {
     // console.log('Checking searching doc');
+    try {
+      var myDoc = await firestore
+        .collection('searching')
+        .doc(currentUser.uid)
+        .get();
+      if (myDoc.exists) {
+        await firestore
+          .collection('searching')
+          .doc(currentUser.uid)
+          .update({ isChatting: 1 });
+      } else {
+        await firestore
+          .collection('searching')
+          .doc(match_id)
+          .update({ isChatting: 1 });
+      }
+      console.log('Set is chatting.');
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  async function checkSearchingDoc(socketInstance) {
+    console.log('Checking searching doc');
     var myDoc = await firestore
       .collection('searching')
       .doc(currentUser.uid)
@@ -718,14 +742,16 @@ export default function Chat() {
         </Modal.Body>
         <Modal.Footer className="mx-auto">
           <img
-            style={{ height: '200px', width: '200px', cursor: 'pointer' }}
+            // style={{ height: '200px', width: '200px', cursor: 'pointer' }}
+            className="chat-modal-images"
             src="DimeAssets/hearteyes.png"
             id="heartEyesImage"
             onClick={pendingMatch}
             alt="Tails"
           />
           <img
-            style={{ height: '200px', width: '200px', cursor: 'pointer' }}
+            // style={{ height: '200px', width: '200px', cursor: 'pointer' }}
+            className="chat-modal-images"
             src="DimeAssets/sleepycoin.png"
             id="sleepyImage"
             onClick={noMatch}
@@ -754,6 +780,7 @@ export default function Chat() {
     // This is a timeout that carried over from the last page. It deletes
     // the doc in the background.
     clearTimeout(timeout_5);
+
     try {
       setMyPhoto(JSON.parse(localStorage.getItem('user_data')).photo);
       setUserInitialized(
@@ -783,6 +810,8 @@ export default function Chat() {
       return;
     }
 
+    setIsChatting();
+
     // This gets the match data.
     fetchMatchInfo().then(() => {
       if (localStorage.getItem('1701') !== null) {
@@ -811,7 +840,7 @@ export default function Chat() {
       localStorage.setItem('chatExpiry', exp);
       console.log('set to', exp);
     }
-
+    var count = 1;
     var checkLoop = setInterval(() => {
       if (window.location.pathname !== '/chat') {
         clearInterval(checkLoop);
@@ -819,7 +848,10 @@ export default function Chat() {
       }
 
       var current = Date.now();
-      checkSearchingDoc(sock);
+      if (count % 5 == 0) {
+        checkSearchingDoc(sock);
+      }
+      count++;
       if (current >= localStorage.getItem('chatExpiry')) {
         // The chat is over, logic for after chat goes here.
         clearInterval(checkLoop);
@@ -832,10 +864,10 @@ export default function Chat() {
           noMatchTimeout();
         }, modalExpire);
       }
-    }, 5000);
+    }, 2000);
 
     var current_time = Date.now();
-    checkSearchingDoc(sock);
+    // checkSearchingDoc(sock);
     if (current_time >= localStorage.getItem('chatExpiry')) {
       //Modal match vs non-match
       // The chat is over, logic for after chat goes here.
@@ -1146,6 +1178,7 @@ export default function Chat() {
       if (timeoutRef2.current !== undefined) clearTimeout(timeoutRef2.current);
       if (extendedTimeoutRef.current !== undefined)
         clearTimeout(extendedTimeoutRef.current);
+      if (observer.current !== null) observer.current();
       window.ononline = null;
       window.onoffline = null;
       if (roomInUseEffect !== '' && sock !== undefined && sock !== null) {
@@ -1419,6 +1452,7 @@ export default function Chat() {
 
   //erase chat log stored in local storage
   function clearChatData() {
+    if (observer.current !== null) observer.current();
     var temp = 1701;
     console.log('Cleared chat data.');
     localStorage.removeItem('inActiveChat');

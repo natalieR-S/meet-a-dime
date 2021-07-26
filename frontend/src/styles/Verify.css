@@ -124,14 +124,36 @@ body {
 }
 
 p {
-  max-width: 500px;
+  max-width: 300px;
   margin-bottom: 12px;
   line-height: 24px;
   padding: 10px 20px;
   border-radius: 25px;
   position: relative;
   color: white;
-  text-align: center;
+  text-align: left;
+  white-space: pre-wrap; /* CSS3 */
+  white-space: -moz-pre-wrap; /* Firefox */
+  white-space: -pre-wrap; /* Opera <7 */
+  white-space: -o-pre-wrap; /* Opera 7 */
+  word-wrap: break-word;
+}
+.chat-modal-images {
+  height: 200px;
+  width: 200px;
+  cursor: pointer;
+}
+@media only screen and (min-width: 450px) {
+  p {
+    max-width: 400px;
+  }
+}
+
+@media only screen and (max-width: 470px) {
+  .chat-modal-images {
+    width: 130px !important;
+    height: 130px !important;
+  }
 }
 
 .chat-message-image {
@@ -246,10 +268,19 @@ p {
   width: 250px;
   height: 100%;
 }
-@media only screen and (max-width: 420px) {
+@media only screen and (max-width: 430px) {
   .header-logo {
-    width: 100%;
-    max-width: 200px;
+    /* width: 100%;
+    max-width: 200px; */
+    width: 200px;
+  }
+}
+
+@media only screen and (max-width: 370px) {
+  .header-logo {
+    /* width: 100%;
+    max-width: 200px; */
+    width: 150px;
   }
 }
 @media only screen and (max-width: 515px) {

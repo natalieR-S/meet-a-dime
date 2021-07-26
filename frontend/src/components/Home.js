@@ -212,7 +212,7 @@ export default function Home() {
   const [match, setMatch] = useState('Not searching.');
   const [id_of_match, setId] = useState('none');
   // Search timeout in milliseconds
-  const MS_BEFORE_ABANDON_SEARCH = 10000;
+  const MS_BEFORE_ABANDON_SEARCH = 30000;
   const MS_TRANSFER_TO_CHAT = 3000;
   // Before match expires. they are separate just incase.
   // const MS_BEFORE_ABANDON_MATCH_DOCJOIN = 10000;
@@ -282,7 +282,7 @@ export default function Home() {
     async function getIntialUserPhoto() {
       try {
         const token = currentUser && (await currentUser.getIdToken());
-        // console.log(token);
+        console.log(token);
         var config = {
           method: 'post',
           url: bp.buildPath('api/getbasicuser'),
@@ -383,7 +383,7 @@ export default function Home() {
         ) {
           document
             .getElementById('home-scrolling')
-            .scrollBy(e.deltaY / 3, 0, 'smooth');
+            .scrollBy(e.deltaY, 0, 'smooth');
         }
         if (
           e.deltaY < 0 &&
@@ -391,7 +391,7 @@ export default function Home() {
         ) {
           document
             .getElementById('home-scrolling')
-            .scrollBy(e.deltaY / 3, 0, 'smooth');
+            .scrollBy(e.deltaY, 0, 'smooth');
         }
       }
     }
@@ -650,6 +650,21 @@ export default function Home() {
 
     // Lock the search button for now, until tasks are done.
     setLockout(true);
+
+    var user_FailMatch = [];
+    var user_SuccessMatch = [];
+    try {
+      var user_userDoc = await firestore
+        .collection('users')
+        .doc(currentUser.uid)
+        .get();
+      user_FailMatch = user_userDoc.data().FailMatch;
+      user_SuccessMatch = user_userDoc.data().SuccessMatch;
+    } catch (error) {
+      console.log(error);
+      return;
+    }
+
     var matchFound = false; // Match found boolean, for this only.
     var matchInternal = ''; // ID of found, for this function only.
 
@@ -732,15 +747,20 @@ export default function Home() {
         var myAge = moment().diff(userInfoRef.current.birth, 'years');
 
         if (
+          doc.id !== currentUser.uid &&
           doc.data().match === '' &&
           searchingSex.includes(doc.data().sex) &&
           doc.data().search_sex.includes(userInfoRef.current.sex) &&
           myAge <= doc.data().search_age_end &&
           myAge >= doc.data().search_age_start &&
           doc.data().age >= userInfoRef.current.ageRangeMin &&
-          doc.data().age <= userInfoRef.current.ageRangeMax
+          doc.data().age <= userInfoRef.current.ageRangeMax &&
+          doc.data().isChatting === 0 &&
+          !doc.data().searchingFailMatch.includes(currentUser.uid) &&
+          !doc.data().searchingSuccessMatch.includes(currentUser.uid)
         ) {
           fillMatch(doc.id);
+          return;
         }
       });
       //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -817,6 +837,9 @@ export default function Home() {
             join_socket_id: '',
             seekerTail: 'false',
             matchTail: 'false',
+            isChatting: 0,
+            searchingFailMatch: user_FailMatch,
+            searchingSuccessMatch: user_SuccessMatch,
           });
         // Just posted the new doc to the 'searching' collection.
         console.log('DOC CREATED');

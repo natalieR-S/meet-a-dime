@@ -443,8 +443,8 @@ export default function UpdateProfile() {
                   value={orientationState}
                   onChange={(e) => setOrientationState(e.target.value)}
                   required>
-                  <option value="1">Heterosexual</option>
-                  <option value="2">Homosexual</option>
+                  <option value="1">Straight</option>
+                  <option value="2">Gay/Lesbian</option>
                   <option value="3">Bisexual</option>
                   <option value="4">Other</option>
                 </Form.Control>

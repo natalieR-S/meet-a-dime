@@ -442,7 +442,7 @@ export default function SignUp() {
                     <option value="1">Straight</option>
                     <option value="2">Gay/Lesbian</option>
                     <option value="3">Bisexual</option>
-                    <option value="4">Questioning</option>
+
                     <option value="5">Other</option>
                   </Form.Control>
                   <Form.Control.Feedback type="invalid">
@@ -450,7 +450,7 @@ export default function SignUp() {
                       'You must choose a sex orientation.'}
                   </Form.Control.Feedback>
                 </Form.Row>
-                {orientationState === '4' && (
+                {orientationState === '5' && (
                   <Form.Group id="customGender">
                     <Form.Control
                       type="text"

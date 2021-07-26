@@ -327,7 +327,7 @@ export default function After() {
                   src="/DimeAssets/headerlogo.png"
                   width="250px"
                   height="100%"
-                  className="d-inline-block align-top"
+                  className="d-inline-block align-top header-logo"
                   alt="logo"
                   href="home"
                   onClick={redirectToHome}
